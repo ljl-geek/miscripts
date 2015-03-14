@@ -1,0 +1,392 @@
+#!/usr/bin/perl -w
+
+# this grabs and dumps to a temp file all the jvm snmp data on a host.  
+# then it parses the data and renders some meaningful data sets in perf data
+# the icinga portion will only alert on one set
+# $date$
+# $author$ 
+
+use strict;
+use Getopt::Long;
+use File::Basename;
+use vars qw($PROGNAME $VERSION $message);
+use lib "/usr/nagios/libexec";
+use lib "/usr/lib64/nagios/plugins";
+use utils qw(%ERRORS);
+
+$PROGNAME = basename($0);
+$VERSION = '$Revision: 1 $';
+$ENV{LC_ALL} = 'POSIX';
+
+my ($o_host, $o_port, $o_public, $o_crit, $o_warn, $o_help, $opt_n, $o_version);
+my ($ccrit, $cwarn, $output, $cont, @cpus_idle, $flag_u, $cpu);
+
+# default thresholds go here
+$o_warn=1;
+$o_crit=10;
+
+
+sub print_usage {
+print <<USAGE;
+    Usage: $PROGNAME -H host -P port -p community_string [-w <warn> -c <crit>] [-h]
+    Icinga/Nagios check for SNMP JVM statistics, using snmp v2c and the JVM-MANAGEMENT-MIB
+    To change default thresholds, edit the variables, otherwise pass them in as arguments
+USAGE
+}
+sub print_help {
+   print "\nSNMP JVM Monitor for Icinga version ",$VERSION,"\n";
+   print_usage();
+   print <<EOT;
+-h, --help
+   print this help message
+-H, --hostname=HOST
+   name or IP address of host to check
+-P, --port=PORT
+   snmp port for jvm 
+-p, --public=COMMUNITY_STRING
+   community string for snmp version 2c
+-w, --warning=INTEGER
+   warning seconds (Default: $o_warn)
+-c, --critical=INTEGER
+   critical seconds (Default: $o_crit)
+-V, --version
+   prints version number
+Note :
+  The script will return 
+    OK if we are able to connect and snmpwalk the jvm
+    WARNING if we are able to connect but not snmpwalk the jvm 
+    CRITICAL if we aren't able to connect
+EOT
+}
+
+Getopt::Long::Configure ("bundling");
+GetOptions(
+        'h'     => \$o_help,    	'help'        	=> \$o_help,
+        'H:s'   => \$o_host,		'hostname:s'	=> \$o_host,
+        'p:s'   => \$o_public,          'public:s'      => \$o_public,
+        'P:i'   => \$o_port,   		'port:i'	=> \$o_port,
+        'w:i'   => \$o_warn,          	'warning:i'     => \$o_warn,
+	'c:i'   => \$o_crit,       	'critical:i'    => \$o_crit,
+	'V'     => \$o_version,         'version'       => \$o_version,
+);
+if (defined ($o_help)) { help(); exit $ERRORS{"UNKNOWN"}};
+if (defined($o_version)) { show_versioninfo(); exit $ERRORS{"UNKNOWN"}};
+# Check compulsory attributes
+if ( !defined($o_host) ) { print "Need the hostname!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}};
+# check snmp community string information
+if (!defined($o_public)) { print "Put snmp community string in!\n"; print_usage(); exit $ERRORS{"UNKNOWN"}}
+
+
+# data grab and parse goes here $cmd=""
+my $cmd="snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.1 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.2 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.1 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.2 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.3 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.4 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.5 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.6 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.3.7 2>&1";
+$cmd=$cmd." ; snmpbulkwalk $o_host:$o_port -v 2c -c $o_public -m ALL -Oqs .1.3.6.1.4.1.42.2.145.3.163.1.1.4 2>&1";
+
+# Do the nasty:
+open(SPEW, "$cmd |") or die "UNKNOWN: $o_host at $o_port doesn't return any data, is java running with that port configured? $!\n";
+
+$message = "JVM Stats |";
+
+my $n=0;
+# check to see if we have a value at all, quit if we don't because there's nothing to parse
+while (<SPEW>) {
+	if (/Timeout: No Response/) { 
+		print "UNKNOWN: $o_host at $o_port doesn't return any data, is java running with that port configured?\n";
+		close SPEW;
+		exit 3;
+		last;
+	} 
+	# get rid of the undesirables
+	next if (/silent/);
+	next if (/Item\./);
+	next if (/Inst/);
+	next if (/Spec/);
+	next if (/RTVM/);
+	next if (/jvmOS/);
+	next if (/supported/);
+	next if (/MemMgrRel/);
+	next if (/State/);
+	next if (/abled/);
+	next if (/JITCompiler/);
+	next if (/mint/);
+	next if (/verbose/);
+	next if (/Name/);
+	next if (/Type/);
+	$n++;
+
+	# now lets process
+	chomp;
+	# get rid of decimals	
+	s/\.//g;
+	# set up units early, we'll add them back in later
+	my $u="";
+	if (/bytes/) { $u = "B"; }
+	if (/milliseconds/) { $u = "ms"; }
+
+
+## find Classes stats
+	if (/jvmClasses/) {
+		s/jvmClasses/jC/;
+		my ($name, $value) = split;
+		$name =~ s/0//;
+		# $u="c";
+                # $value = "$value"."$u";
+		#print "jvm Classes $name=$value\n";
+		$message = "$message $name=$value";
+		next;
+	} 
+#jvmClassesLoadedCount.0 38914
+#jvmClassesTotalLoadedCount.0 38954
+#jvmClassesUnloadedCount.0 40
+
+	if (/jvmMemory/) {
+		s/jvmMemory/jM/;
+		my ($name, $value) = split;
+		$name =~ s/0//;
+		$value = "$value"."$u";
+		# print "jvm Memory $name=$value \n";
+		$message = "$message $name=$value";
+                next;
+        } 
+
+## heap stats
+#jvmMemoryHeapInitSize.0 42949672960 bytes
+#jvmMemoryHeapUsed.0 4133552752 bytes
+#jvmMemoryHeapCommitted.0 41607495680 bytes
+#jvmMemoryHeapMaxSize.0 41607495680 bytes
+#jvmMemoryNonHeapInitSize.0 24313856 bytes
+#jvmMemoryNonHeapUsed.0 441230152 bytes
+#jvmMemoryNonHeapCommitted.0 710680576 bytes
+#jvmMemoryNonHeapMaxSize.0 910163968 bytes
+
+## MemManager - info
+#jvmMemManagerName.1 CodeCacheManager
+#jvmMemManagerName.2 ParNew
+#jvmMemManagerName.3 ConcurrentMarkSweep
+#jvmMemManagerState.1 valid
+#jvmMemManagerState.2 valid
+#jvmMemManagerState.3 valid
+
+        if (/jvmMemGC/) {
+                s/jvmMemGC/jMGC/;
+                my ($name, $value) = split;
+		$u="c";  # these are all counters
+                $value = "$value"."$u";
+                # print "jvm MemGC $name=$value \n";
+                $message = "$message $name=$value";
+                next;
+        }
+
+## GC count?
+#jvmMemGCCount.2 184
+#jvmMemGCCount.3 87
+#jvmMemGCTimeMs.2 78252 milliseconds
+#jvmMemGCTimeMs.3 29385 milliseconds
+
+        if (/jvmThread/) {
+                s/jvmThread/jTh/;
+                my ($name, $value) = split;
+                $name =~ s/0//;
+                $value = "$value"."$u";
+                # print "jvm Thread $name=$value \n";
+                $message = "$message $name=$value";
+                next;
+        }
+
+## jvm threads
+#jvmThreadCount.0 247
+#jvmThreadDaemonCount.0 214
+#jvmThreadPeakCount.0 279
+#jvmThreadTotalStartedCount.0 13679
+#jvmThreadContentionMonitoring.0 disabled
+#jvmThreadCpuTimeMonitoring.0 enabled
+#jvmThreadPeakCountReset.0 0 milliseconds
+
+        if (/jvmRT/) {
+                s/jvmRT/jRT/;
+                my ($name, $value) = split;
+		$name =~ s/0//;
+                $value = "$value"."$u";
+                # print "jvm RT $name=$value \n";
+                $message = "$message $name=$value";
+                next;
+        }
+
+## RT
+#jvmRTInputArgsCount.0 29
+#jvmRTUptimeMs.0 277802053 milliseconds
+#jvmRTStartTimeMs.0 1408738609238 milliseconds
+
+	if (/jvmMemPool/) {
+		s/jvmMemPool/jMP/;
+		my ($name, $value) = split;
+		$value = "$value"."$u";
+		# print "jvm MemPool $name=$value \n";
+		$message = "$message $name=$value";
+                next;
+        } 
+
+## mem pool stuff
+#jvmMemPoolName.1 Code Cache
+#jvmMemPoolName.2 Par Eden Space
+#jvmMemPoolName.3 Par Survivor Space
+#jvmMemPoolName.4 CMS Old Gen
+#jvmMemPoolName.5 CMS Perm Gen
+#jvmMemPoolType.1 nonheap
+#jvmMemPoolType.2 heap
+#jvmMemPoolType.3 heap
+#jvmMemPoolType.4 heap
+#jvmMemPoolType.5 nonheap
+#jvmMemPoolState.1 valid
+#jvmMemPoolState.2 valid
+#jvmMemPoolState.3 valid
+#jvmMemPoolState.4 valid
+#jvmMemPoolState.5 valid
+#jvmMemPoolPeakReset.1 0 milliseconds
+#jvmMemPoolPeakReset.2 0 milliseconds
+#jvmMemPoolPeakReset.3 0 milliseconds
+#jvmMemPoolPeakReset.4 0 milliseconds
+#jvmMemPoolPeakReset.5 0 milliseconds
+#jvmMemPoolInitSize.1 2555904 bytes
+#jvmMemPoolInitSize.2 8053063680 bytes
+#jvmMemPoolInitSize.3 1342177280 bytes
+#jvmMemPoolInitSize.4 32212254720 bytes
+#jvmMemPoolInitSize.5 21757952 bytes
+#jvmMemPoolUsed.1 37987712 bytes
+#jvmMemPoolUsed.2 3684843936 bytes
+#jvmMemPoolUsed.3 63261664 bytes
+#jvmMemPoolUsed.4 1849654336 bytes
+#jvmMemPoolUsed.5 403347048 bytes
+#jvmMemPoolCommitted.1 38404096 bytes
+#jvmMemPoolCommitted.2 8053063680 bytes
+#jvmMemPoolCommitted.3 1342177280 bytes
+#jvmMemPoolCommitted.4 32212254720 bytes
+#jvmMemPoolCommitted.5 672407552 bytes
+#jvmMemPoolMaxSize.1 104857600 bytes
+#jvmMemPoolMaxSize.2 8053063680 bytes
+#jvmMemPoolMaxSize.3 1342177280 bytes
+#jvmMemPoolMaxSize.4 32212254720 bytes
+#jvmMemPoolMaxSize.5 805306368 bytes
+#jvmMemPoolPeakUsed.1 37998656 bytes
+#jvmMemPoolPeakUsed.2 8053063680 bytes
+#jvmMemPoolPeakUsed.3 1034552304 bytes
+#jvmMemPoolPeakUsed.4 1894858144 bytes
+#jvmMemPoolPeakUsed.5 403347048 bytes
+#jvmMemPoolPeakCommitted.1 38404096 bytes
+#jvmMemPoolPeakCommitted.2 8053063680 bytes
+#jvmMemPoolPeakCommitted.3 1342177280 bytes
+#jvmMemPoolPeakCommitted.4 32212254720 bytes
+#jvmMemPoolPeakCommitted.5 672407552 bytes
+#jvmMemPoolPeakMaxSize.1 104857600 bytes
+#jvmMemPoolPeakMaxSize.2 8053063680 bytes
+#jvmMemPoolPeakMaxSize.3 1342177280 bytes
+#jvmMemPoolPeakMaxSize.4 32212254720 bytes
+#jvmMemPoolPeakMaxSize.5 805306368 bytes
+#jvmMemPoolCollectUsed.1 0 bytes
+#jvmMemPoolCollectUsed.2 19142000 bytes
+#jvmMemPoolCollectUsed.3 63261664 bytes
+#jvmMemPoolCollectUsed.4 1849654336 bytes
+#jvmMemPoolCollectUsed.5 403337800 bytes
+#jvmMemPoolCollectCommitted.1 0 bytes
+#jvmMemPoolCollectCommitted.2 8053063680 bytes
+#jvmMemPoolCollectCommitted.3 1342177280 bytes
+#jvmMemPoolCollectCommitted.4 32212254720 bytes
+#jvmMemPoolCollectCommitted.5 672407552 bytes
+#jvmMemPoolCollectMaxSize.1 0 bytes
+#jvmMemPoolCollectMaxSize.2 8053063680 bytes
+#jvmMemPoolCollectMaxSize.3 1342177280 bytes
+#jvmMemPoolCollectMaxSize.4 32212254720 bytes
+#jvmMemPoolCollectMaxSize.5 805306368 bytes
+#jvmMemPoolThreshold.1 0 bytes
+#jvmMemPoolThreshold.2 0 bytes
+#jvmMemPoolThreshold.3 0 bytes
+#jvmMemPoolThreshold.4 0 bytes
+#jvmMemPoolThreshold.5 0 bytes
+#jvmMemPoolThreshdCount.1 0
+#jvmMemPoolThreshdCount.2 0
+#jvmMemPoolThreshdCount.3 0
+#jvmMemPoolThreshdCount.4 0
+#jvmMemPoolThreshdCount.5 0
+#jvmMemPoolThreshdSupport.1 supported
+#jvmMemPoolThreshdSupport.2 unsupported
+#jvmMemPoolThreshdSupport.3 unsupported
+#jvmMemPoolThreshdSupport.4 supported
+#jvmMemPoolThreshdSupport.5 supported
+#jvmMemPoolCollectThreshold.1 0 bytes
+#jvmMemPoolCollectThreshold.2 0 bytes
+#jvmMemPoolCollectThreshold.3 0 bytes
+#jvmMemPoolCollectThreshold.4 0 bytes
+#jvmMemPoolCollectThreshold.5 0 bytes
+#jvmMemPoolCollectThreshdCount.1 0
+#jvmMemPoolCollectThreshdCount.2 0
+#jvmMemPoolCollectThreshdCount.3 0
+#jvmMemPoolCollectThreshdCount.4 0
+#jvmMemPoolCollectThreshdCount.5 0
+#jvmMemPoolCollectThreshdSupport.1 unsupported
+#jvmMemPoolCollectThreshdSupport.2 supported
+#jvmMemPoolCollectThreshdSupport.3 supported
+#jvmMemPoolCollectThreshdSupport.4 supported
+#jvmMemPoolCollectThreshdSupport.5 supported
+
+	# print "$n => $_\n";
+
+}
+
+
+#Now lets make the output smaller
+$message =~ s/Threshd/Thr/g;
+$message =~ s/Threshold/Thr/g;
+$message =~ s/Count/Ct/g;
+$message =~ s/Collect/C/g;
+$message =~ s/Max/Mx/g;
+$message =~ s/Min/Mn/g;
+$message =~ s/Size/Sz/g;
+$message =~ s/Peak/Pk/g;
+$message =~ s/Pool/P/g;
+$message =~ s/Mem/M/g;
+$message =~ s/Memory/M/g;
+$message =~ s/Init/In/g;
+$message =~ s/InputArgs/InArg/g;
+$message =~ s/Thread/Th/g;
+$message =~ s/Time/Tm/g;
+$message =~ s/Uptime/Up/g;
+$message =~ s/Reset/R/g;
+$message =~ s/Heap/H/g;
+$message =~ s/Non/N/g;
+$message =~ s/Daemon/D/g;
+$message =~ s/Loaded/L/g;
+$message =~ s/Unloaded/UnL/g;
+$message =~ s/Total/Tl/g;
+$message =~ s/Committed/Com/g;
+$message =~ s/Used/U/g;
+$message =~ s/Pending/Pnd/g;
+$message =~ s/Final/F/g;
+$message =~ s/Started/St/g;
+$message =~ s/Start/St/g;
+
+# now do the return, order matters here, note the exits
+#if [ $foo -ge $crit ] 
+#then
+#	message="CRITICAL: $foo explanation"
+#	status=2
+#elsif [ $foo -ge $warn ] 
+#then
+#        message="WARNING: $foo explanation"
+#        status=1
+#elsif [ $foo -lt $warn ] 
+#then
+        $message = "OK: $message\n";
+        my $status = 0;
+#else
+#	echo "UNKNOWN: jvm doesn't return a valid value for snmpwalk, or something else is wrong"
+#	status=3
+
+print $message;
+exit $status;
