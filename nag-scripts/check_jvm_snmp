@@ -1,21 +1,30 @@
 #!/usr/bin/perl -w
 
-# this grabs and dumps to a temp file all the jvm snmp data on a host.  
-# then it parses the data and renders some meaningful data sets in perf data
-# the icinga portion will only alert on one set
-# $date$
-# $author$ 
+# This grabs and dumps to a temp file all the jvm snmp data on a host.  
+# Then it parses the data and renders some meaningful data sets in perf data
+# Caution: the nagios/icinga portion (unfinished) should only alert on one set
+#
+# Note: this DOES NOT use net::snmp module, since it is not always present
+# Also, I left in some sample data
+# The companion pnp4nagios file is check_jvm_snmp.php
+#
+# This version 2015-03-13
+# L J Laubenheimer
+#
+# TODO: add the part to select attributes to alert on, like Foo,Bar,Baz
+# and set thresholds like aa,bb,cc
 
 use strict;
 use Getopt::Long;
 use File::Basename;
 use vars qw($PROGNAME $VERSION $message);
+# yes, this uses the nagios_plugins utils.pm
 use lib "/usr/nagios/libexec";
 use lib "/usr/lib64/nagios/plugins";
 use utils qw(%ERRORS);
 
 $PROGNAME = basename($0);
-$VERSION = '$Revision: 1 $';
+$VERSION = '$Revision: 2 $';
 $ENV{LC_ALL} = 'POSIX';
 
 my ($o_host, $o_port, $o_public, $o_crit, $o_warn, $o_help, $opt_n, $o_version);
@@ -34,7 +43,7 @@ print <<USAGE;
 USAGE
 }
 sub print_help {
-   print "\nSNMP JVM Monitor for Icinga version ",$VERSION,"\n";
+   print "\nSNMP JVM Monitor for Nagios/Icinga version ",$VERSION,"\n";
    print_usage();
    print <<EOT;
 -h, --help
