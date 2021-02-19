@@ -3,6 +3,8 @@ miscripts
 
 Miscellaneous scripts and plugins that I want to share
 
+I have also put some of these into miscTemplates. I should merge the repos...
+
 nag-scripts
 -----------
 Various simple nagios/icinga plugin scripts
