@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# get seconds since epoch
+test "x$1" == x && date -u +%s && exit 0
+
+# or convert epoch seconds to date format (see "man date" for options)
+EPOCH="$1"
+shift
+if [ $EPOCH -gt 9999999999 ] ; then
+     date -u -d @$(($EPOCH/1000)) "$@" "+%F %T %Z"
+else
+     date -u -d @"$EPOCH" "$@" "+%F %T %Z"
+fi
