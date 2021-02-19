@@ -1,0 +1,113 @@
+PurStorage Notes
+
+2.1 GET array
+Lists the attributes for the array, including the array name, Purity version and Purity revision number. Can also display historical performance data.
+Parameters
+Parameter	Type		Description
+action 		string 		If set to "monitor", displays the following realtime or historical performance data:
+Latency: 
+* usec_per_read_op = average arrival-to-completion time, measured in microseconds, for a host read operation.
+* usec_per_write_op = average arrival-to-completion time, measured in microseconds, for a host write operation.
+* queue_depth = average number of queued I/O requests.
+IOPS:
+reads_per_sec = number of read requests processed per second.
+writes_per_sec = number of write requests processed per second.
+Bandwidth:
+input_per_sec = number of bytes read per second.
+output_per_sec = number of bytes written per second.
+
+Example 3: List array space usage
+Request: GET https://pure01.example.com/api/1.4/array?space=true
+Response:
+{
+"capacity": 4620646400,
+"data_reduction": 1.0,
+"hostname": "pure01",
+"shared_space": 0,
+"snapshots": 0,
+"system": 0,
+"thin_provisioning": 1.0,
+"total": 0,
+"total_reduction": 1.0,
+"volumes": 0
+}
+
+
+curl -k -H "Content-Type: application/json" -X POST -d '{"api_token": "*************" }' https://foopur003.foo.example.com/api/1.4/auth/session -c /tmp/foopur003.foo.example.com
+curl -k -b /tmp/foopur003.foo.example.com -X GET https://foopur003.foo.example.com/api/1.4/array?action=monitor; echo
+curl -k -b /tmp/foopur003.foo.example.com -X GET https://foopur003.foo.example.com/api/1.4/array?space=true; echo
+
+
+curl -k -b /tmp/foopur003.foo.example.com -X GET https://foopur003.foo.example.com/api/1.4/volume/ICM_DATA1; echo
+
+
+
+[
+{"status": "enabled", "name": "ct0.eth0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.51", "hwaddr": "ec:f4:bb:c6:0d:64", "speed": 1000000000, "gateway": "10.107.214.1"}, 
+{"status": "disabled", "name": "ct0.eth1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "ec:f4:bb:c6:0d:65", "speed": 1000000000, "gateway": ""}, 
+{"status": "enabled", "name": "ct1.eth0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.52", "hwaddr": "ec:f4:bb:c1:67:cc", "speed": 1000000000, "gateway": "10.107.214.1"}, 
+{"status": "disabled", "name": "ct1.eth1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "ec:f4:bb:c1:67:cd", "speed": 1000000000, "gateway": ""},
+ {"status": "disabled", "name": "replbond", "mtu": 1500, "services": ["replication"], "netmask": "", "slaves": ["eth2", "eth3"], "address": "", "hwaddr": "7a:d7:80:db:b0:52", "speed": 10000000000, "gateway": ""}, 
+{"status": "enabled", "name": "vir0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.50", "hwaddr": "be:e9:0c:61:d5:80", "speed": 1000000000, "gateway": "10.107.214.1"}, 
+{"status": "disabled", "name": "vir1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "5a:8f:80:da:14:c1", "speed": 1000000000, "gateway": ""}
+]
+
+
+ echo '[{"status": "enabled", "name": "ct0.eth0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.51", "hwaddr": "ec:f4:bb:c6:0d:64", "speed": 1000000000, "gateway": "10.107.214.1"}, {"status": "disabled", "name": "ct0.eth1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "ec:f4:bb:c6:0d:65", "speed": 1000000000, "gateway": ""}, {"status": "enabled", "name": "ct1.eth0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.52", "hwaddr": "ec:f4:bb:c1:67:cc", "speed": 1000000000, "gateway": "10.107.214.1"}, {"status": "disabled", "name": "ct1.eth1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "ec:f4:bb:c1:67:cd", "speed": 1000000000, "gateway": ""}, {"status": "disabled", "name": "replbond", "mtu": 1500, "services": ["replication"], "netmask": "", "slaves": ["eth2", "eth3"], "address": "", "hwaddr": "7a:d7:80:db:b0:52", "speed": 10000000000, "gateway": ""}, {"status": "enabled", "name": "vir0", "mtu": 1500, "services": ["management"], "netmask": "255.255.255.0", "slaves": [], "address": "10.107.214.50", "hwaddr": "be:e9:0c:61:d5:80", "speed": 1000000000, "gateway": "10.107.214.1"}, {"status": "disabled", "name": "vir1", "mtu": 1500, "services": ["management"], "netmask": "", "slaves": [], "address": "", "hwaddr": "5a:8f:80:da:14:c1", "speed": 1000000000, "gateway": ""}]' | ./JSON.sh | egrep '"status"]|"name"]' | sed -e 's/\[//g' | sed -e 's/]\t/,/g' | sed -e 's/"//g' | awk -F, '{print $2"["$1"]" "=" $3}'
+
+
+
+
+[ljl@nagios002 tdev-server-plugins]$ curl -k -H "Content-Type: application/json" -X POST -d '{"api_token": "**************" }' https://foopur003.foo.example.com/api/1.4/auth/session -c /tmp/foopur003.foo.example.com
+curl -k -b /tmp/foopur003.foo.example.com -X GET https://foopur003.foo.example.com/api/1.4/array?space=true; echo{"username": "pureuser"}
+
+
+[li0v4q9@nagios002 tdev-server-plugins]$ curl -k -b /tmp/foopur00pur003.foo.example.com/api/1.4/array?action=monitor; echo
+[{
+"writes_per_sec": 2452, 
+"usec_per_write_op": 512, 
+"output_per_sec": 670710077, 
+"reads_per_sec": 11102, 
+"input_per_sec": 19685597, 
+"time": "****-09-23T21:28:55Z", 
+"usec_per_read_op": 570, 
+"queue_depth": 11
+}]
+
+
+[ljl@nagios002 tdev-server-plugins]$ curl -k -b /tmp/foopur003.foo.example.com -X GET https://foopur003.foo.example.com/api/1.4/array?space=true; echo
+
+
+{
+"capacity": 44576756237312, 
+"hostname": "foopur003", 
+"system": 1953407014912, 
+"snapshots": 7645219126272, 
+"volumes": 6488733857792, 
+"data_reduction": 6.48355897761186, 
+"total": 34043728099328, 
+"shared_space": 17956368100352, 
+"thin_provisioning": 0.4784423119715017, 
+"total_reduction": 12.43114448589546
+}
+
+
+Here are the rest for now.
+
+Latency: 
+* usec_per_read_op = average arrival-to-completion time, measured in microseconds, for a host read operation.
+WARN: 10milisec CRITICAL:20 milisec
+* usec_per_write_op = average arrival-to-completion time, measured in microseconds, for a host write operation.
+WARN: 10milisec CRITICAL:20 milisec
+* queue_depth average = number of queued I/O requests.
+WARN: 300 CRITICAL:500
+IOPS:
+reads_per_sec = number of read requests processed per second.
+WARN:100,000 CRITICAL:150,000
+writes_per_sec = number of write requests processed per second.
+WARN: 50,000 CRITICAL:60,000
+Bandwidth:
+input_per_sec = number of bytes read per second.
+WARN: 3GB/Sec CRITICAL:5GB/sec
+output_per_sec = number of bytes written per second.
+WARN: 1GB/Sec CRITICAL:2GB/sec

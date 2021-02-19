@@ -1,0 +1,29 @@
+#get printable list of fac proxy hosts (does not incude non-prod or not live)
+rm /tmp/facpxlist 
+for colo in $(er -e "%gd-gms:FACPX,%gd-mainsite:FACPX,%gd-mainsite:FACPXPN" | sort)
+do 
+num=$(er -e %$colo | wc -l)
+n=$(echo "scale=0; sqrt ( $num )" | bc -l)
+echo "$colo  ____  $num ( $n )  ____" >> /tmp/facpxlist
+echo >> /tmp/facpxlist; done
+
+
+# pushout incantation (adm1009)
+/export/crawlspace/configs/bin/gd2/freeze-deploy -r $range -m $max -e $release -c $config -C $CMR -o pushout                       
+
+# switch fac px (adm1009)
+/export/crawlspace/configs/bin/gd2/freeze-deploy -r $range -e $release -c $config -m $max -C $CMR -o facpx_switch -g $graphs
+
+# switch ads (adm1009)
+/export/crawlspace/configs/bin/gd2/freeze-deploy -r $range -e $release -c $config -m $max -C $CMR -o ads_switch -g $graphs
+
+# grepping pager logs for alerts
+cd /opt/stash/irclogs/cmfedpager; grep '< ssbot_cmfed> \[' cmfedpager-2013-07-* | sed -e "s/^cmfedpager-2013-07-..:..:.. //" 
+| sed -e "s/^..:.. //" | sed -e "s/^< ssbot_cmfed> //" | sed -e "s/\[.\+\] //" | sort -u -k 2  
+
+# personal p4 web
+p4web -B -p 56789 -H swerver.corp.example.com
+
+#13:46:00 < nikhilo> I am sleeping meta watcher pages now
+mssh -t 60 -o user=root -r '@WATCHER' 'echo "86400" > /var/meta-watcher/targets/adm1000.foo.example.com'
+

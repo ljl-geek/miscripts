@@ -1,0 +1,34 @@
+Setup Notes
+
+1. Get repos
+2. Fix .git/config on repos
+3. Make sure keys are there and in git
+4. Make sure junos pulse access
+
+Non-recipe changes - managed
+1. Make changes to roles/create role (easiest to clone similar role)
+2. Make changes to nodes
+3. (Make changes to data_bags) - nagios_contacts/*, nagios_contactgroups/*
+4. Git diff
+5. Run vbag (verify) on changed/new files (from git status)
+6. Commit and push
+7. Check build on KnifeManage http://jenkins01.foo.example.dev:8080/job/KnifeManage/
+8. Deploy to dev (server then nagios host)
+9. Check for roles/hosts on dev nagios
+10. Build now on TagProdReady http://jenkins01.foo.example.com:8080/job/TagProdReady with 7-digit sha from my commit and tag message 'Approved - https://confluence.gid.example.com/display/MO/Approval+Confirmation+-+PROD - MonOps-#### What changed' 
+11. Check build on TagProdReady
+12. Deploy to servers then to nagios in prod
+
+Non-recipe changes - unmanaged
+1. Make data bags changes in managed - nagios_services/*, nagios_hostgroups/*, etc
+2. Go to repo chanagios-hosts or rccnagios-hosts
+3. Add or change hostgroups, etc on host file(s)
+4. git diff
+5. sudo vbag [changes]
+6. commit and push
+7. check build on data_bag upload for nagios Dev Jenkins
+8. check build
+9. deploy to dev nagios (nagios002.foo/rcc) w sudo chef-client
+10. do a "build now" in prod jenkins chanagios_hosts or rccnagios_hosts http://jenkins01.foo.example.com:8080/
+11. check build
+12. deploy to prod nagios (nagios002.foo/rcc)

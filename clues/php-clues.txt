@@ -1,0 +1,20 @@
+PHP clues
+
+$time = time();
+$date = date('Y-m-d H:i:s',$time);
+echo $date;
+
+Lentzen, Steve says: (4:16:32 PM)
+
+You should look up on YouTube “Ultimate Dog Tease” 
+Lentzen, Steve says: (4:16:49 PM)
+
+my girls have watched it a million times
+--------
+https://www.hipchat.com/g31OXigIH
+sign up 
+work email
+example.hipchat.com
+
+
+Mar 13 07:24:25 src@shard5b puppet-agent[21850]: (/Stage[main]/Ntp/File[/etc/ntp.conf]/content) content changed '{md5}104987bf98e4ebd1ad2f91bac139c1e8' to '{md5}ccd5b57b3a4e7d3e48cb35a65ce3b4f1'

@@ -1,0 +1,37 @@
+###################### gitness #################
+
+# sample user block for .git config
+[user]
+        name = L J Laubenheimer
+        email = lj_laubenheimer@example.com
+
+# show what branches you have
+ git branch
+
+# create a new branch and show the branches
+ git branch foo
+ git branch
+
+# after creation, check it out to switch
+ git checkout foo
+ git branch
+
+# pair the branch with the origin
+ git branch --set-upstream origin/foo
+
+# push the branch to the main repo
+ git push origin foo
+
+# pull from origin before commit
+ git merge origin foo
+
+# switch back to master
+ git checkout master
+
+# delete a branch
+ git branch -d foo
+
+# last 5 commits (6 lines each)
+git log <file> | head -30
+
+

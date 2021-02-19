@@ -1,0 +1,16 @@
+11:16:27 < adevassy> one more thing to do should be
+11:16:27 < adevassy> atleast find the offending records
+11:16:33 < adevassy> and make sure its GD1
+11:16:41 < kothan> thanks dale
+11:16:50 < adevassy> other than the fallback , migration of records to and fro can also result in these sort of issues
+11:16:56 < adevassy> aah Jayant is here !
+11:17:03 < ljl_GDoncall> umm, yeah, because if it's gd2, it could be a different thing
+11:17:10 < jrao> just catching up on the logs...
+11:17:14 < dalen_> How do I tell if GD1 from the event version
+11:17:22 < adevassy> yes
+11:17:23 < ljl_GDoncall> happy saturday, jayant...
+11:17:30 < adevassy> GD1 has something like 9.* version
+11:17:31 < dalen_> k, checking
+11:17:34 < adevassy> GD2 is more like 14.*
+11:17:44 < adevassy> version = schema version
+

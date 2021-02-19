@@ -1,0 +1,374 @@
+active memory checkin
+
+--
+Check for active memory on ETL and shardx:
+
+{code}[ljl@admin3 nagios]$ svn diff
+Index: nrpe.cfg
+===================================================================
+--- nrpe.cfg	(revision 8917)
++++ nrpe.cfg	(working copy)
+@@ -204,6 +204,7 @@
+ command[check_swap_db]=/usr/local/nagios/libexec/check_swap -w 500 -c 100
+ command[check_mem]=/usr/local/nagios/libexec/check_mem -w 80,30 -c 90,40
+ command[check_allmem]=/usr/local/nagios/libexec/check_allmem.sh -w 5000 -c 2500
++command[check_active_mem]=/usr/local/nagios/libexec/check_activemem.sh -u -p -w 70 -c 80
+ command[check_memory]=/usr/local/nagios/libexec/check_memory -w 500 -c 100
+ command[check_nfs]=/usr/local/nagios/libexec/check_nfs -w 5 -c 10 -w
+ command[check_user_allow]=/usr/local/nagios/libexec/show_users -f /usr/local/nagios/libexec/whitelist_file
+Index: libexec/check_activemem.sh
+===================================================================
+--- libexec/check_activemem.sh	(revision 0)
++++ libexec/check_activemem.sh	(revision 0)
+@@ -0,0 +1,153 @@
++#!/bin/bash
++
++warnp=10
++critp=5
++warnk=1000
++critk=500
++units=""
++host=""
++community=""
++
++# usage
++function usage () {
++cat <<-USAGE
++    Usage: $0 [-w warn -c crit] [-p] [-u] [-h]
++    Custom Nagios check for memory (Active RAM)
++	-w: warning Free threshold, kilobytes, default 500kB (or % with -p, default 10%)
++        -c: critical Free threshold, kilobytes, default 100kB (or % with -p, default 5%)
++	-p: thresholds are in percent
++	-u: thresholds are amount used
++	-h: help
++    To change default thresholds, edit the variables, otherwise pass them in as arguments
++USAGE
++}
++
++# getops define them here, and put in usage
++while getopts "w:c:puh" OPT; do
++    case "$OPT" in
++        w) warn="$OPTARG" ;;
++        c) crit="$OPTARG" ;;
++	p) percent=TRUE ;;
++	u) used=TRUE ;;
++        h) usage
++           exit 3                                     ;;
++        *) echo "Unrecognized option: $OPT" >&2
++           echo >&2
++           usage
++           exit 3                                   ;;
++    esac
++done
++
++# check to see if we have set thresholds, otherwise use defaults
++if [ x$warn != "x" ]
++then 
++	warnp=$warn
++	warnk=$warn
++fi
++
++if [ x$crit != "x" ]
++then
++        critp=$crit
++	critk=$crit
++fi	
++
++# make sure the table is clear
++table=""
++
++table=( $(cat /proc/meminfo | egrep "MemT|MemF|Act|Buf|^Cach" | sed 's/ kB//g' | sed 's/:\s*/=/g') )
++for i in ${table[@]}; do export $i; done
++
++# now unify the variable names
++RT=$MemTotal	# RAM Total
++RF=$MemFree	# RAM Free
++BU=$Buffers	# buffers
++CA=$Cached	# cached
++AC=$Active	# Active mem
++
++# now that we have our data, let's crunch numbers:
++MF=$( echo "$RT - $AC" | bc -l )    # memory free
++
++PF=$( echo "scale=2;$MF*100/$RT" | bc -l )    # percent free
++PU=$( echo "scale=2;$AC*100/$RT" | bc -l )    # percent used
++freelabel="kB free"
++usedlabel="kB used"
++
++# check - note percent is floating point!
++if [ $percent ]
++then
++	# lets cheat a bit, rather than try to compare floats
++	critk=$( echo "scale=0;$critp*$RT/100" | bc -l )   # get absolute value for crit threshold
++	warnk=$( echo "scale=0;$warnp*$RT/100" | bc -l )   # get absolute value	for warn threshold
++	freelabel="% free"
++	usedlabel="% used"
++fi
++
++perf="Active="$AC"kB Buffers="$BU"kB Cache="$CA"kB Total="$RT"kB warn="$warnk"kB crit="$critk"kB "
++
++if [ $percent ]
++then
++  if [ $used ]
++  then
++	# echo "Result is $PU $usedlabel"
++        if [[ $AC -ge $critk ]]
++        then
++            	echo "CRITICAL: $PU $usedlabel of $RT kB | $perf"
++                exit 2
++         elif [[ $AC -ge $warnk ]]
++         then
++             	echo "WARNING: $PU $usedlabel of $RT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $PU $usedlabel of $RT kB | $perf"
++                exit 0
++        fi
++  else
++        # echo "Result is $PF  $freelabel"
++        if [[ $MF -le $critk ]]
++        then
++             	echo "CRITICAL: $MF $freelabel of $RT kB | $perf"
++                exit 2
++        elif [[ $MF -le $warnk ]]
++        then
++              	echo "WARNING: $MF $freelabel of $RT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $MF $freelabel of $RT kB | $perf"
++                exit 0
++        fi
++  fi
++else
++  if [ $used ]
++  then
++      	# echo "Result is $PU $usedlabel"
++        if [[ $AC -ge $critk ]]
++        then
++            	echo "CRITICAL: $AC $usedlabel of $RT kB | $perf"
++                exit 2
++         elif [[ $AC -ge $warnk ]]
++         then
++             	echo "WARNING: $AC $usedlabel of $RT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $AC $usedlabel of $RT kB | $perf"
++                exit 0
++        fi
++  else
++      	# echo "Result is $PF  $freelabel"
++        if [[ $MF -le $critk ]]
++        then
++                echo "CRITICAL: $MF $freelabel of $RT kB | $perf"
++                exit 2
++        elif [[ $MF -le $warnk ]]
++        then
++                echo "WARNING: $MF $freelabel of $RT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $MF $freelabel of $RT kB | $perf"
++                exit 0
++        fi
++  fi
++fi
++
++echo "UNKNOWN: something went wrong"
++exit 3
+
+Property changes on: libexec/check_activemem.sh
+___________________________________________________________________
+Added: svn:executable
+   + *
+
+Index: libexec/check_allmem2.sh
+===================================================================
+--- libexec/check_allmem2.sh	(revision 0)
++++ libexec/check_allmem2.sh	(revision 0)
+@@ -0,0 +1,174 @@
++#!/bin/bash
++
++warnp=10
++critp=5
++warnk=1000
++critk=500
++units=""
++host=""
++community=""
++
++# usage
++function usage () {
++cat <<-USAGE
++    Usage: $0 [-w warn -c crit] [-p] [-u] [-h]
++    or $0 -H host -C community [-w warn -c crit] [-p] [-u] [-h]
++    Custom Nagios check for memory (ram+swap)
++	-w: warning Free threshold, kilobytes, default 500kB (or % with -p, default 10%)
++        -c: critical Free threshold, kilobytes, default 100kB (or % with -p, default 5%)
++	-p: thresholds are in percent
++	-u: thresholds are amount used
++	-H: host name (for snmp)
++	-C: community string (for snmp)
++	-P: evaluate on amount of program memory used (discount swap and buffers)
++    To change default thresholds, edit the variables, otherwise pass them in as arguments
++USAGE
++}
++
++# getops define them here, and put in usage
++while getopts "C:H:w:c:pPuh" OPT; do
++    case "$OPT" in
++        C) community="$OPTARG" ;;
++        H) host="$OPTARG" ;;
++        w) warn="$OPTARG" ;;
++        c) crit="$OPTARG" ;;
++	p) percent=TRUE ;;
++	P) program=TRUE ;;
++	u) used=TRUE ;;
++        h) usage
++           exit 3                                     ;;
++        *) echo "Unrecognized option: $OPT" >&2
++           echo >&2
++           usage
++           exit 3                                   ;;
++    esac
++done
++
++# check to see if we have set thresholds, otherwise use defaults
++if [ x$warn != "x" ]
++then 
++	warnp=$warn
++	warnk=$warn
++fi
++
++if [ x$crit != "x" ]
++then
++        critp=$crit
++	critk=$crit
++fi	
++
++# check to see if we are using snmp 
++hc_check="$host,$community"
++
++if [ $hc_check == "," ]
++then 
++	local=TRUE
++elif [ x$host != "x" ] && [ x$community != "x" ]
++then 
++	snmp=TRUE
++else
++	usage
++	exit 3
++fi
++
++# make sure the table is clear
++table=""
++
++# if it's local (no hostname, public)
++if [ $local  ]
++then
++	table=( $(cat /proc/meminfo | egrep "MemT|MemF|SwapT|SwapF|Buf|Cach" | sed 's/ kB//g' | sed 's/:\s*/=/g') )
++	for i in ${table[@]}; do export $i; done
++
++	# echo "SwapTotal is $SwapTotal; SwapFree is $SwapFree; MemTotal is $MemTotal; MemFree is $MemFree; Buffers is $Buffers; Cached is $Cached"
++# now unify the variable names
++	ST=$SwapTotal  # Swap Total
++	SF=$SwapFree   # Swap Free
++	RT=$MemTotal   # RAM Total
++	RF=$MemFree    # RAM Free
++	BU=$Buffers    # buffers
++	CA=$Cached     # cached
++fi
++
++# if it's by snmp (has hostname, public)
++if [ $snmp ]
++then
++	table=$(/usr/bin/snmpwalk -m ALL -v2c -c $community -Osq $host .1.3.6.1.4.1.2021.4 | egrep "Total|Avail|Buff|Cache" | sed "s/mem//g" | sed "s/ kB//g" | sed "s/.0 /=/g")
++        for i in ${table[@]}; do export $i; done
++
++        # echo "TotalSwap is $TotalSwap; AvailSwap is $AvailSwap; TotalReal is $TotalReal; AvailReal is $AvailReal; Buffer is $Buffer; Cached is $Cached"
++# now unify the	variable names
++	ST=$TotalSwap   # Swap Total
++	SF=$AvailSwap   # Swap Free
++	RT=$TotalReal   # RAM Total
++	RF=$AvailReal   # RAM Free
++	BU=$Buffer      # buffer
++	CA=$Cached      # cached
++fi
++
++# now that we have our data, let's crunch numbers:
++SU=$( echo "$ST - $SF" | bc -l)     # swap used
++RU=$( echo "$RT - $RF" | bc -l )    # real used
++# but, RU = PR + BU + CA, so let's solve for PR
++PR=$( echo "$RU - $BU - $CA" | bc -l )    # program used
++#echo "program used is $PR" 
++
++CT=$( echo "$ST + $RT" | bc -l )    # combined total
++CF=$( echo "$SF	+ $RF" | bc -l )    # combined free
++CU=$( echo "$SU + $PR + $BU + $CA" | bc -l )    # combined used
++#echo "Combined used is $CU"
++
++PF=$( echo "scale=2;$CF*100/$CT" | bc -l )    # percent free
++PU=$( echo "scale=2;$CU*100/$CT" | bc -l )    # percent used
++PP=$( echo "scale=2;$PR*100/$CT"| bc -l )    # percent program used
++#echo "Percent program used is $PP"
++#echo "Percent total used is $PU"
++# echo "SwapUsed is $SU kB; RealUsed is $RU kB; CombinedTotal is $CT kB; CombinedFree is $CF kB; PercentFree is $PF %; PercentUsed is $PU %"
++freelabel="kB free"
++usedlabel="kB used"
++
++# check - note percent is floating point!
++if [ $percent ]
++then
++	# lets cheat a bit, rather than try to compare floats
++	critk=$( echo "scale=0;$critp*$CT/100" | bc -l )   # get absolute value for crit threshold
++	warnk=$( echo "scale=0;$warnp*$CT/100" | bc -l )   # get absolute value	for warn threshold
++	freelabel="% free"
++	usedlabel="% used"
++fi
++
++perf="Swap_Used="$SU"kB Prog_Used="$PR"kB Buff="$BU"kB Cache="$CA"kB Swap_Free="$SF"kB RAM_Free="$RF"kB warn="$warnk"kB crit="$critk"kB "
++
++if [ $used ]
++then
++	# echo "Result is $PU $usedlabel"
++        if [[ $CU -ge $critk ]]
++        then
++            	echo "CRITICAL: $PU $usedlabel of $CT kB | $perf"
++                exit 2
++         elif [[ $CU -ge $warnk ]]
++         then
++             	echo "WARNING: $PU $usedlabel of $CT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $PU $usedlabel of $CT kB | $perf"
++                exit 0
++        fi
++else
++        # echo "Result is $PF  $freelabel"
++        if [[ $CF -le $critk ]]
++        then
++             	echo "CRITICAL: $PF $freelabel of $CT kB | $perf"
++                exit 2
++        elif [[ $CF -le $warnk ]]
++        then
++              	echo "WARNING: $PF $freelabel of $CT kB | $perf"
++                exit 1
++         else
++             	echo "OK: $PF $freelabel of $CT kB | $perf"
++                exit 0
++        fi
++fi
++
++echo "UNKNOWN: something went wrong"
++exit 3
+
+Property changes on: libexec/check_allmem2.sh
+___________________________________________________________________
+Added: svn:executable
+   + *
+
+[ljl@admin3 nagios]$ svn ci -m "OPS-2466 check active memory"
+Adding         nagios/libexec/check_activemem.sh
+Adding         nagios/libexec/check_allmem2.sh
+Sending        nagios/nrpe.cfg
+Transmitting file data ...
+Committed revision 8921.
+{code}

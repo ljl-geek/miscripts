@@ -1,0 +1,15 @@
+rpm database barf
+
+[ljl@shard18a:~] (shard18-master)$ sudo rpm --rebuilddb
+rpmdb: PANIC: fatal region error detected; run recovery
+error: db4 error(-30977) from dbenv->open: DB_RUNRECOVERY: Fatal error, run database recovery
+error: cannot open Packages index using db3 -  (-30977)
+
+cd /var/lib/rpm
+ls __db.00*
+sudo rm __db.00*
+sudo rpm --rebuilddb
+sudo yum clean all
+cd
+
+

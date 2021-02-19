@@ -1,0 +1,101 @@
+# trim files
+phile="/some/too/big/file"; n="lines to keep"
+[ $(wc -l $phile) -gt $n ] && sed -i "1,$(($(wc -l $phile|awk '{print $1}') - $n)) d" myfile.txt
+# quick and dirty
+ tail -n 100000 balancer_ssl_requests > balancer_ssl_requests.cut; mv balancer_ssl_requests.cut balancer_ssl_requests; service httpd restart
+
+cd /deploy/log; sudo su ; tail -n 100000 servicelayer-console.log > servicelayer-console.log.cut; chown deploy:deploy servicelayer-console.log.cut; mv servicelayer-console.log.cut servicelayer-console.log
+
+# compare floating point numbers in bash (messy but it works)
+if (( $(/usr/bin/bc <<< "$out >= $crit") == 1 )); then blah; fi
+
+# ls with date in sec, for use in scripts
+ls -l --time-style="+%s"
+
+# have epoch, spew date
+$(date -d @$secs +'%Y-%m-%d %T')
+
+# test for ssh, get exit code only
+sshtest=$(ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $host "ls" > /dev/null 2>&1 ;echo $?)
+
+# remember basename
+filename=$(basename "$fullfile")
+
+# perl hacking regex crunching
+perl -pi -e 's/old regex/new string/' <file(s)>
+perl -pi.orig -e 's/old regex/new string/' <file(s)>  # with backup
+
+# check for rootness
+if [ "$(id -u)" != "0" ]; then
+   die "This script must be run as root" 
+fi
+
+# expand out of example.ini, run check on host
+for h in $(pget.awk SECTION=web PARAM=hosts /etc/example.ini | sed 's/w/web/g')
+do 
+echo -n "$h returns "
+/usr/local/nagios/libexec/check_http -I $(nslookup $h | grep ddress | tail -1 | awk '{ print $2 }') -H wwws.example.com -p 8080 \
+-u "/loginUserSubmit.xevent" -P "task=L&username=alertbot@example.com&password=3r3rer" -v | grep -q "http://wwws.example.com:8080/overview.event"
+echo $?
+done
+
+# verify nag config
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+
+# clean up sec
+ps -eaf | grep sec | awk '{ print $2 }' | xargs sudo kill; sudo chkconfig sec on; sudo service sec restart
+
+# troll nrpe configs based on example.ini
+for h in $(/usr/local/bin/pget.awk SECTION=layer PARAM=hosts /etc/example.ini | sed 's/l/layer/g')
+do ssh $h 'echo -n "`hostname` "grep servicelayer /usr/local/nagios/nrpe.cfg' 
+done
+
+# get the system serial number
+sudo dmidecode -s system-serial-number
+
+# get the crap that needs its name fixed in nagios
+[lindal@admin2 configs-prod]$ grep check * | grep description | grep -v "#" | sed 's/service_description//g' | awk -F: '{ print $2 " : " $1}' | sort
+
+# go from a file of one host per line plus comments to a comma separated list of hosts
+cat phile | awk '{ print $1 }' | awk  '$1=$1' RS= OFS=
+
+# clean up logs
+sudo find /deploy/log -name "*log*" -type f -mtime +180 -exec rm -f {} \;
+
+# get a delimited output
+ls -m checkscripts | sed "s/, /\', \'/g" | sed "s/,$/\', \'/g"
+
+# rainbows in the shell
+yes "$(seq 231 -1 16)" | while read i; do printf "\x1b[48;5;${i}m\n"; sleep .02; done
+
+# grab hosts, run a check manually
+for h in $(grep web /etc/icinga/conf.d/hosts-generated.cfg | grep host_name | awk '{ print $2 }'); do echo -n "$h "; /usr/lib64/nagios/plugins/check_http -I $h -H www.example.com -p 8080 -u "/cds/" -s "invest"; done
+
+# converting greps to variables
+# first do the funky to get a list array
+foo=$(cat /etc/example.ini | grep etl | sed 's/ //g' | sed 's/=/=("${etl[@]}" "/g' | sed 's/$/");/g')
+list=$(bash -c "etl=(); $foo  etls=\${etl[@]};  echo \$etls ")
+ #echo "list is $list"
+listarray=($list)
+ # then also build a comma delineated set for the hostgroup
+etl_list=${list// /,};
+
+# add routes - for permanent add to /etc/sysconfig/network-scripts/route-eth0
+sudo route add default gw 10.0.0.1
+sudo route add -net 66.151.159.198 netmask 255.255.255.255 gw 10.0.0.1
+
+#this is a list of users haven't been logged to shardx in the last 365 days
+[root@shardx home]# find ./ -maxdepth 1 -type d -mtime +360 | xargs du -sch
+
+# flush all shards
+for h in {1..90}; do ssh shard$h-master "mysqladmin -h shard$h-master -u root -p{password} flush-hosts"; done
+
+# yum annoyances
+sudo yum repolist all
+sudo yum update bash -y --disablerepo centos5_patchdate --disablerepo CentOS-Base
+
+# tunnel from aws to own machine, assuming config already has setup
+ssh -L 9888:localhost:443 10.81.248.238
+
+# sync from icinga to admin7 git
+rsync -avz -e ssh 10.81.248.180:~/icinga .; rsync -avz -e ssh icinga admin7:~/git/srv/salt

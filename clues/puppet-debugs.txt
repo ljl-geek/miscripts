@@ -1,0 +1,39 @@
+
+scp admin2:~/conf/base/usr/local/nagios/libexec/check_iops.sh .
+sudo cp check_iops.sh /usr/local/nagios/libexec/check_iops.sh
+---
+# Run of Puppet configuration client already in progress; skipping
+stop puppet, rm /var/lib/puppet/state/puppetdlock
+
+#To make puppet update and run
+sudo su -
+cd /etc/puppet/templates
+sudo svn up
+
+### too many crons, hangs up on check_example_db_size_root (crappy python w/o error handling)
+ps -eaf | grep nagios_check_example_db_size_root| awk '{ print $2 }' | xargs sudo kill
+ps -eaf | grep CROND | awk '{ print $2 }' | xargs sudo kill
+sudo mkdir -p /data/mysql/example
+sudo su -
+echo 1 > /data/mysql/example/placeholder
+exit
+[ljl@admin2 scripts]$ sudo -u nagios ./bulk-downtime-hostgroup.sh -g "pod2" -s "$startTime" -e "$endTme"
+start is 20130320 00:00:00; end is 
+    Usage: sudo -u nagios ./bulk-downtime-hostgroup.sh -g "<quoted hostgroups separated by commas>" -s "<start date/time>" -e "<end date/time>" -h
+    Schedule downtime for all services by hostgroup(s)
+    Remember to use the hostgroup name as shown by Nagios
+    See also https://wiki.example.com/display/sop/SOP-2033+Using+Nagios+Bulk+Downtime+Scripts
+
+end time required
+[ljl@admin2 scripts]$ sudo -u nagios ./bulk-downtime-hostgroup.sh -g "pod2" -s "$startTime" -e "$endTime"
+start is 20130320 00:00:00; end is 20130320 02:30:00
+Hostgroup pod2 in downtime from 20130320 00:00:00 to 20130320 02:30:00
+
+Mac headphones problem (HD->Library->Preferences->Audio -> delete both .plist files in this folder) 
+
+--------
+/usr/lib64/nagios/plugins/pmp-check-mysql-replication-delay -S /data/mysql/mysql.sock -l mon -p ****
+
+check_percona_replication_delay
+
+command[check_percona_replication_delay]=/usr/lib64/nagios/plugins/pmp-check-mysql-replication-delay -S /data/mysql/mysql.sock -l mon -p ****

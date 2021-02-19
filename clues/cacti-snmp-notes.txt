@@ -1,0 +1,83 @@
+snmp-java notes
+
+[ljl@layer902 ~]$ ls /deploy/currentRelease/conf-local/* | xargs grep snmp
+/deploy/currentRelease/conf-local/layer.cfg:java.servicelayer.snmp.port=9995
+/deploy/currentRelease/conf-local/prod.cfg:java.tomcat.snmp.port=9997
+
+========
+
+[ljl@admin3 scripts]$ pwd
+/var/www/cacti/scripts
+
+[ljl@admin3 scripts]$ ls
+3com_cable_modem.pl	       loadavg.pl		     postfixqueues.sh		      ss_get_mysql_stats.php.old
+diskfree.pl		       memcached.py		     prod_errors.sh		      ss_host_cpu.php
+diskfree.sh		       example_perf.pl		     query_host_cpu.php		      ss_host_disk.php
+dumpMemcachedStats.php	       example_perf_stats.sh	     query_host_partitions.php	      ss_sql.php
+dump_notifications	       mysql_stats.php		     query_unix_partitions.pl	      tomcat_perf
+get_ccexample_stats_from_db.py    netscreen_policy_traffic.php  show_notifications.pl	      uhoh.sh
+get_cc_realtime_status.pl      netscreen_stats.pl	     sql.php			      unix_processes.pl
+get_varnish_stats.py	       openldap_operations.pl	     ss_f5-bigip-tmm-memory.php       unix_tcp_connections.pl
+get_yodlee_call_rate.pl        openldap_response_time.pl     ss_fping.php		      unix_users.pl
+get_yodlee_realtime_status.pl  parse_notifications	     ss_get_by_ssh.php		      weatherbug.pl
+linux_memory.pl		       ping.pl			     ss_get_mysql_stats.php	      webhits.pl
+loadavg_multi.pl	       postfixcheck.pl		     ss_get_mysql_stats.php.20130625
+
+
+
+These correspond to the data you get, like load average, processes, linux memory, 
+
+Also, https://admin1.example.com/cacti/utilities.php?action=view_logfile 
+=========
+to get java related mibs:
+snmpwalk -v 2c -c example layer902:9995 .1.3.6.1.2.1.31.1.1.1
+host is host:port
+
+to get net related mibs:
+snmpwalk -v 2c -c example layer902 .1.3.6.1.2.1.31.1.1.1
+
+Note: 
+[ljl@admin3 cacti]$ snmpwalk -v 2c -c example layer902:9995 .1.3.6.1.2.1.31.1.1.1
+IF-MIB::ifXEntry = No Such Object available on this agent at this OID
+
+You can't use the port that has the java stuff for the interface stuff, so you need to poll and graph that data separately.
+
+===========
+tried this with layer101 and layer601
+
+========
+made layer101int to grab interface data on the default port
+lots of fiddly shit, including adding graphs, adding to tree, and enabling the graph!!
+
+========
+Trying to get traffic betweeen two servers:
+snmpwalk services901 -v2c -c example .1 | grep 10.0.6.248
+no go
+
+tcpdump -npi eth0 host (MACHINEB)HOSTNAME/IP -vvvs0 -w /var/tmp/network_traffic.cap
+
+iftop
+
+vnstat
+-----------
+On admindb1, sudo mysql -p
+
+use cacti;
+
+Web auth
+| auth_method                 | 2                                                                                                                    | 
+| guest_user                  | guest                                                                                                                | 
+| user_template               | guest                                                                                                                 
+
+Clone admin if you get locked out.
+-----------
+
+Fixed the borken configs because of trying to be proper and config logrotate, put log back into /tmp so that apache could write to it, and set up the logrotate to copytruncate. 
+
+Also changed php.ini so that:
+max_execution_time = 60 (was 30)
+memory_limit = 512M (was 256M, software advised 384M+)
+max_input_time = 120 (was 60)
+then restarted httpd
+
+

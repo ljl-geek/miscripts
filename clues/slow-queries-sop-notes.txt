@@ -1,0 +1,10 @@
+Determine if the slow queries are due to system load or not by checking the load on [Pulse|https://admin1.example.com/pulse/]. Remember that the load is distributed over the number or corers that a machine has. 
+
+Look in slow query log (/data/mysql_logs/slow-queries.log) to see what queries are slowing down, see if it's a particular user or type of query.  (See [5.2.4 The Slow Query Log (MySQL)|https://dev.mysql.com/doc/refman/5.0/en/slow-query-log.html] and 
+[Non-technical Guide to Isolating Slow MySQL Queries|http://hackmysql.com/nontech])
+
+Enlist the help of a DBA to figure whether the queries can/should be optimized in the next release, and file appropriate tickets.
+
+See also [MySQL - debugging database locks|https://wiki.example.com/display/~izlatev/Mysql+-+debugging+database+locks]
+
+Remember to acknowledge the alert with your name and what the cause is.

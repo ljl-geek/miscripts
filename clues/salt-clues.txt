@@ -1,0 +1,180 @@
+# Look at all grains possible, all servers
+sudo salt '*' grains.ls
+
+# Look at all grains possible, one group of servers
+sudo salt 'static*' grains.ls
+
+# Look at all ggrains values, a group of servers
+sudo salt 'static*' grains.items
+
+# get the values of all items by name for a group of hosts
+sudo salt 'shard*' grains.item pod
+
+# working tests
+{% if grains['osrelease'].startswith('6') %}
+{% if 'static' in grains.tags %}
+{% if grains.site == "sunnyvale" %} 
+
+
+     shardalias    ${ grainInfo[b].get('shard_alias', []) }
+     host     ${ grainInfo[b].get('host', []) }
+
+[ljl@admin4 icinga]$ sudo salt 'shard33a.prod.example.com' grains.item host
+shard33a.prod.example.com:
+  host: shard33a
+[ljl@admin4 icinga]$ sudo salt 'shard33a.prod.example.com' grains.item shard_alias
+shard33a.prod.example.com:
+  shard_alias: shard33-slave
+
+#make a comment 
+{# this is a comment in salt #}
+
+# on host salt call, test only
+sudo salt-call state.sls nrpe test=True
+
+# on host salt call, do it to it
+sudo salt-call state.sls nrpe 
+sudo salt-call  state.sls snmpd
+
+
+# pod 9 only?
+{% if grains.pod == "9" %}
+
+# salt multirun
+sudo salt --out txt -G 'tags:master' cmd.run 'ps -eaf | grep nrpe | grep -v grep'
+sudo salt --out txt 'services*' cmd.run 'ls /var/log/activemq' | sort -k 2
+
+# bulk edit
+sudo salt --out txt -b 6 'alpha*' cmd.run 'perl -pi.orig -e \'s/10.0.6.81$/10.0.6.81,10.0.3.206/\' /usr/local/nagios/nrpe.cfg; service nrpe restart'
+
+# salt cp - instead of scp iterations
+sudo salt-cp '*' bashcheck /root/bashcheck
+
+# all known tags
+sudo salt '*' grains.item tags | grep -v "prod.example.com" | grep -v "tag" |sort -u
+      admin
+      alpha
+      broker
+      commondb
+      crowd
+      dispatcher
+      dwh
+      dwhx
+      fileserv
+      graphite
+      icinga
+      layer
+      master
+      example-admin
+      example-offers
+      monitoringdb
+      notification
+      pe
+      propane
+      rei
+      shard
+      slave
+      splunk
+      static
+      vasd
+      web
+      web-cs
+
+(where is etl, pub, services)
+
+To execute a function, use salt.function:
+
+cmd.run:
+  salt.function:
+    - tgt: '*'
+    - arg:
+      - rm -rf /tmp/foo
+
+# Push to prod master:
+    sudo git push prod master
+
+# push from master
+sudo salt -E 'shard*' -b 3 state.sls nrpe test=True
+
+# get unaccepted keys
+sudo salt-key --list=un
+
+# accept a key
+sudo salt-key -a admin8.prod.example.com
+
+# version check
+sudo salt '*' test.version
+
+# how to add a repo to an init.sls file
+# * as a separate stanza, add the repo *before* the package stanzas:
+icinga-release:
+  pkgrepo.managed:
+    - humanname: ICINGA (stable release for epel)
+    - baseurl: http://packages.icinga.org/epel/$releasever/release/
+    - comments:
+      - '# icingas own rpm repo'
+    - enabled: 1
+    - gpgcheck: 1
+    - gpgkey: http://packages.icinga.org/icinga.key
+
+icinga:
+  pkg:
+    - installed
+.....
+
+# sync the mines
+seth [19:34] 
+I'm trying saltutil.sync_all ...
+
+seth [19:34]
+[seth@admin7 failover]$ sudo salt shard9b* saltutil.sync_all
+shard9b.prod.example.com:
+   ----------
+   grains:
+   modules:
+   outputters:
+   renderers:
+   returners:
+   states:
+
+------
+rakesh [16:37] 
+${shards()[0]} will always equal to 1, right?
+
+seth [16:37] 
+no
+
+seth [16:37]
+shards() returns the shards for the context.
+
+seth [16:38]
+if you are in pod 8 shards() will return 57.
+
+seth [16:38]
+def shards():
+   if grains.get('pod') and not messed_up():
+       shards = pillar['fromstatic']['pod_to_shards'][grains['pod']]
+   elif grains['site'] == 'sunnyvale':
+       shards = all_shards()
+   else:
+       shards = []
+   return shards
+
+seth [16:38]
+messed_up is only true on services502.
+
+rakesh [16:39] 
+Wow...awesome!!!
+
+rakesh [16:40]
+man i have to catch up with all these changes :disappointed:
+
+seth [16:40] 
+if grains.get('pod') == 0, then shards() returns all the shards.
+-------
+# note: "mode:" statements need the numbers single quoted
+http://docs.saltstack.com/en/latest/ref/states/all/salt.states.file.html states:
+
+    Warning
+
+    When using a mode that includes a leading zero you must wrap the value in single quotes. If the value is not wrapped in quotes it will be read by YAML as an integer and evaluated as an octal.

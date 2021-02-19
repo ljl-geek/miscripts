@@ -1,0 +1,524 @@
+Markdown mode!!
+
+---++ pager "who's on first"
+
+<verbatim>
+~/src/gem/raw/pager-gd*  
+</verbatim>
+
+---++ list yroots
+
+<verbatim>
+yroot:  ~ $ yroot --list
+  ezdeploys 5.6-20110328 [ljl 1314219769]
+</verbatim>
+
+---++ reimaging vms
+
+<verbatim>
+15:34 <@jadestar> tngo: For re-imaging VMs we just add the hosts to VMs and (so far) we just add them to the appropriate
+                  ads.cm3_managed_* role
+15:34 <@jadestar> I've given the exact command I used in the update to http://bug.corp.example.com/show_bug.cgi?id=4945733
+15:36 <@jadestar> As for choosing a VM technology --- that wouldn't be necessary.  If we created a standard command 
+(including just changes to the existing OpsDB system) then the implementation should be look up the "right thing(TM)" 
+based on the parent of the VM (the host that the guest will reside on).
+15:37 <@jadestar> Here's a hand command for looking the parent info when you know or suspect that a hostname refers to a VM:
+                  qa-gd2rbckt-001.raptor.adx.pool.ac4.example.com qa-gd2rbckt-002.raptor.adx.pool.ac4.example.com
+                  qa-gd2rbckt-003.raptor.adx.pool.ac4.example.com qa-gd2rbckt-004.raptor.adx.pool.ac4.example.com
+15:38 <@jadestar> for i in qa-gd2rbckt-00{1..4}.raptor.adx.pool.ac4.example.com ; do opsdb -getentry -host $i | egrep 
+'(ropert|type:|parent)'; done          parent_id: 761790 parent_name: apgvm135.raptor.adx.pool.ac4.example.com
+</verbatim>
+
+---++ conference bridges
+
+<verbatim>
+19:02 <@hsim> for those of you that want to create a new BT conference phone bridge for yourself here is the info
+19:02 <@hsim> http://www.conferencingatexample.com/example/index.jsp?utm_source=coss&utm_medium=email&utm_content=link&utm_campaign=welcome-meetme-gettingstarted
+19:02 < tinybot> http://tiny.corp.example.com/6AQIj4
+</verbatim>
+
+---++ keeping watchers up
+
+<verbatim>
+11:50 <@vvarun> In both those cases, please edit the watcher transform and set the right range
+11:51 <@vvarun> The point is - each and everyone of us should do that. Fix monitoring, that is
+11:51 <@ljl> I don't even know where those are - and before today, I didn't know that they existed
+11:51 <@vvarun> I have been making very impassioned speaches about it to Hubert and Peter :)
+11:51 <@vvarun> Ah!
+11:51 <@vvarun> The watcher transform is WATCHER_GD_SP1
+11:52 <@vvarun> All the watcher configs (including what ranges to watch) is in that one transform
+11:52 <@ljl> gemstone, right?
+11:52 <@vvarun> Yup
+</verbatim>
+
+---++ craptor
+
+<verbatim>
+13:44 <@marcj> isnt there a web page/gui?
+13:44 < tngo> not sure, i was not trained in raptopr
+13:44 < tngo> er raptor
+13:46 <@marcj>  yvm --restart  $host
+13:46 <@marcj> I believe that's for a poolboy host.
+13:47 < tngo> haha well poolboy, you have access to ui.. generally they won't give you access to the vmhost itself
+13:48 <@marcj> actually, I think they have to don't they.
+13:48 <@marcj> these would be machines that we're responsible to manage ...
+</verbatim>
+
+---++ where's jadestar's stuff
+
+<verbatim>
+14:38 <@jadestar>  URL: svn+ssh://svn.corp.example.com/example/users/jadestar
+14:38 <@jadestar> Repository Root: svn+ssh://svn.corp.example.com/example/users
+</verbatim>
+
+---++ broken ranges with dashes
+
+<verbatim>
+ac4-imsqabck1-017.raptor.adx.pool.ac4.example.com breaks the expand range perl routineb (because of dashes between numbers), 
+get around by looking in gem/raw/groups.cf ac4-imsqabck1-{n-m}
+</verbatim>
+
+---++ eas restarting
+
+<verbatim>
+14:16 <cparry>     2  yinst ls|grep status
+14:16 <cparry>     3  yinst stop yapache_status yapache_ssl_status
+14:16 <cparry>     4  tail -f /home/y/logs/yapache/access
+14:16 <cparry>     5  cd /home/y/conf
+14:16 <cparry>     6  ls
+14:16 <cparry>     7  cd webctl
+14:16 <cparry>     8  ls
+14:16 <cparry>     9  sudo vi webctl.conf
+14:16 <cparry>    10  ls -l
+14:16 <cparry>    11  tail -f /home/y/logs/yapache/access
+14:16 <cparry>    12  yinst stop
+14:17 <cparry>    13  yinst stop
+14:17 <cparry>    14  cd /home/y/logs/yapache/
+14:17 <cparry>    15  ,ls
+14:17 <cparry>    16  ls
+14:17 <cparry>    17  ls -l
+14:17 <cparry>    18  sudo bash
+14:17 <cparry>    19  ls -l
+14:17 <cparry>    20  yinst start
+14:17 <cparry>    21  ps auxwww|grep yapach
+14:17 <cparry>    22  /home/y/bin/ads-check
+14:17 <cparry>    23  yinst ls|grep status
+14:17 <cparry>    24  yinst start yapache*status
+14:17 <cparry>
+14:17 <cparry> basically do yinst stop yap*status
+14:17 <cparry> this takes the eas host oor
+14:17 <cparry> tail -f access log until Not Found is all that is happening (thats a watcher or some other test)
+14:17 <cparry> then you can yinst stop ; yinst stop ; clean access log if needed, then yinst start
+14:18 <cparry> verify that both ssl and normal yapache process are running then yinst start yap*status
+
+yinst ssh -h "{ext2,ext5,ext7}.ads.ac4.example.com" "sudo /home/y/bin/clean_logs.pl --day=3"
+</verbatim>
+
+---++ adsvr start
+
+<verbatim>
+CMD="/home/y/bin/udsConfLoader-start"
+CMD="$CMD;/home/y/bin/uds_client-start"
+CMD="$CMD;/home/y/bin/ads-restart"
+CMD="sudo /home/y/bin/ups_client-start; sudo -u ads sh -c '$CMD'"
+echo -e "Excute: $CMD\n\ton $(wc -l $TARGFILE) hosts?"
+echo -n 'continue? '; read continue
+autopw yinst ssh -print -cont -H "$TARGFILE" -- "$CMD"
+sudo ups_client-start; sudo -u ads sh -c 'udsConfLoader-start; uds_client-start; ads-restart; ups_client-start'
+</verbatim>
+
+---++ set new monitoring perms
+
+<verbatim>
+17:21 <@afaupell> no its usually permissions on the host
+17:23 <@afaupell> that should fix it
+17:23 <@afaupell> needs chmoding of the service entries
+17:23 < ljl_GD_oncall> ah
+17:24 < ljl_GD_oncall> on the monitoring host? or on the host under question
+17:24 <@afaupell> adm1000
+17:24 < ljl_GD_oncall> ah
+17:24 <@afaupell> when you add watchers to gs
+17:24 <@afaupell> it doesnt set it up right initially
+</verbatim>
+
+---++ AC Broker
+
+<verbatim>
+10:40 < fsaberi> anyone knows how to deploy AC Broker?
+10:41 < fsaberi> what's the range for AC Broker?
+10:41 < tngo> let me check
+10:43 < tngo> this is to both colo?
+10:43 < tngo> or just ac4?
+10:44 < fsaberi> ac4 and gq1
+10:44 < tngo> ims2-ac4-acbroker1
+10:44 < tngo> and ims2-gq1-acbroker1
+10:47 < tngo> hm.. so acbroker only
+10:47 < tngo> yeah that should be it
+10:50 < tngo> do something like: mssh -o 'user root' -o 'stricthostkeychecking no' -r %ims2-ac4-acbroker1 'yinst restore 
+-igor -igor_tag ump.mi2_3_ump_patch_20120307-123109_266 -nostart'
+10:51 < tngo> then slowly restart acbroker as this is rolling restart
+10:51 < tngo> i recommend doing ac4 first
+10:51 < tngo> as that is our bcp
+10:52 < fsaberi> what are the stop/start commands
+10:55 < tngo> in ac4 i just stop all acbroker
+10:55 < tngo> yinst stop -all
+10:55 < tngo> since ac4 is bcp.. just stop all 3 of the host
+10:56 < tngo> just for ac4 i would do...
+10:56 < tngo> mssh -o 'user root' -o 'stricthostkeychecking no' -r %ims2-ac4-acbroker1 'yinst stop -all'
+10:56 < tngo> mssh -o 'user root' -o 'stricthostkeychecking no' -r %ims2-ac4-acbroker1 'yinst restore -igor -igor_tag
+              ump.mi2_3_ump_patch_20120307-123109_266 -nostart'
+10:56 < tngo> mssh -o 'user root' -o 'stricthostkeychecking no' -r %ims2-ac4-acbroker1 'yinst start -all'
+10:56 < tngo> in gq1... i would do them one at a time
+10:57 < tngo> make sure that when you do yinst stop -all... all process actually stopped
+10:57 < tngo> sometimes shmproxy refuses to stop or something
+10:58 < ljl> yes, you sometimes have to log on to the box and find and kill the shmproxies
+10:58 < tngo> my trick is to sudo su ads..
+10:58 < tngo> then kill -9 -1
+</verbatim>
+
+---++ force cads checkpoint
+
+<verbatim>
+16:53 < cparry> for CADS hosts, the gds-updater process can be told via 'kill -USR1 $pid', to create a new checkpoint on the 
+next non-heartbeat msg update it gets
+18:46 < cparry> wanna dump the contents of an mdbm (at least on a cads box) run 
+"Inspector -e -f /home/y/var/gds/gd2-gq1-cads1p0/server/gds.mdbm -o 1 -t gds -c /home/y/share/distro/ct/pb_msg.proto"
+</verbatim>
+
+---++ make your own svn user repo (20120612)
+
+   1. make your local repo dir, then make your user dir under that and cd into it<br /> =mkdir -p svn-ljl/ljl; cd svn-ljl/ljl=
+   1. make a file under that<br /> =echo "TEST" > README.txt=
+   1. back up a directory, and import your masterpiece into svn<br /> =cd ..; svn import ljl svn+ssh://svn.corp.example.com/example/users/ljl=
+   1. Now you have a repo
+
+---++ watchers and tags and sync_igor, oh my! (20120612)
+
+<verbatim>16:28:57 <@afaupell> when you restore hosts can you look at monitoring to be sure they are working correctly
+16:33:40 <@marcj> hmm ... How would you define working correctly?
+16:33:57 <@marcj> I checked to make sure they were working correctly by running "ads-check".
+16:34:10 <@marcj> which returns what it's supposed to, I believe.
+16:34:37 <@marcj> and I don't have any documentation to refer to which would talk about which monitoring is appropriate.
+16:34:44 <@marcj> Where would I find that?
+16:35:30 <@marcj> and do you know which package is responsible for creating /export/crawlspace?
+16:36:16 <@marcj> the lack of that directory structure makes me think that perhaps this machine is not setup correctly.
+16:46:12 <@afaupell> i cannot completely define working correctly
+16:46:23 <@afaupell> but not alerting in the monitoring should certainly be a part of that
+16:48:36 <@marcj> sure.
+16:49:22 <@marcj> so ... what creates the directory structure "/export/crawlspace" ? Because the software involved w/ 
+revenue thinks it's working fine.
+16:50:28 <@marcj> and it would have been nice if this had been caught ~ 24 hours ago.  maybe earlier for gd2134.
+16:53:13 <@afaupell> it may be serving correctly but is it really working fine if we cant detect when it fails
+16:53:41 <@afaupell> anything that writes to /e/c could create it. watchers included
+16:57:21 <@marcj> yinst ls -h gd2134.adx.bf1.example.com | grep watcher
+16:57:21 <@marcj> yinst@gd2134.adx.bf1: perl_seco_remotewatcher-0.1_4604
+16:57:34 <@marcj> yinst@gd2134.adx.bf1: seco_remotewatchers-0.1_9015
+16:58:19 <@marcj> yinst ls -h gd2134.adx.bf1.example.com | grep orca
+16:58:19 <@marcj> yinst@gd2134.adx.bf1: perl_seco_orca_metrics_beta_write-0.1_5325
+16:58:42 <@marcj> yinst@gd2134.adx.bf1: seco_orca-0.1.5
+16:58:56 <@marcj> yinst@gd2134.adx.bf1: seco_orca_bsd-0.0.4
+16:59:11 <@marcj> yinst@gd2134.adx.bf1: seco_orca_gd-0.1.33
+16:59:45 <@marcj> the errore message given on the host(s) indicates that a file is missing underneath /export/crawlspace, 
+which doesn't exist.
+17:00:01 <@marcj> it would seem as if the watchers are not creating /export/crawlspace.
+17:00:02 <@afaupell> what monitoring is supposed to be running?
+17:00:03 <@afaupell> http://adm1000.ads.corp.sp1.example.com/cgi-bin/watcher-monitor/t/gd2134.adx.bf1.example.com
+17:00:03 < tinybot> http://tiny.corp.example.com/RPhTuu
+17:00:12 <@afaupell> there are 4 services
+17:00:16 <@afaupell> lets see what they do
+17:00:28 <@marcj> cool.  more training.
+17:00:46 <@afaupell> adm1000.ads.corp.sp1 ~]$ ps -xa | grep evh-ysar
+17:00:46 <@afaupell> 23912 ?        S      0:26 /usr/bin/perl -w /usr/libexec/watcher-multimetrics -r %gd-mainsite:EVH -m ysar -e load_15m,15,> -i evh-ysar
+17:01:07 <@afaupell> oh its running a generic metrics watcher looking for "ysar" metrics from %gd-mainsite:EVH
+17:01:30 <@afaupell> $ hostname
+17:01:30 <@afaupell> gd2134.adx.bf1.example.com
+17:01:30 <@afaupell> -bash-3.2$ grep ysar /service/*/run
+17:01:30 <@afaupell> /service/watcher-ysar/run:exec /home/y/libexec/ysar_watcher -g -d 300 -i gd-bf1-evh
+17:01:41 <@afaupell> this looks like a service that might write those metrics
+17:01:48 <@afaupell> lets look at the logs for that service
+17:02:15 <@afaupell> $ cat /service/watcher-ysar/log/main/current | tai64nlocal | less
+17:02:24 <@afaupell> 2012-06-12 23:59:27.971401500 Option i is required
+17:02:24 <@afaupell> 2012-06-12 23:59:27.971408500
+17:02:24 <@afaupell> 2012-06-12 23:59:27.971890500 Usage: /home/y/libexec/ysar_watcher [options]
+17:02:41 <@afaupell> look like that watcher is missing an argument it needs to run
+17:03:12 <@afaupell> $ yinst ls -files | grep libexec/ysar_watcher
+17:03:12 <@afaupell> /home/y/libexec/ysar_watcher                            seco_remotewatchers-0.1_9015
+17:03:18 <@afaupell> heres the package it comes from
+17:03:23 <@ljl> the -i is usually the cluster name
+17:03:54 <@afaupell> maybe we can compare these settings from one on a host that works
+17:05:04 <@marcj> the cluster name is missing?
+17:05:14 <@afaupell> if we do that we will see the setting seco_remotewatchers.cluster is set to the cluster name but is 
+missing on gd2134
+17:06:59 <@afaupell> this cluster thing is a side effect of a problem with metrics_beta and the fact that most adservers 
+cant access range
+17:07:19 <@afaupell> so its usually (or always) set in the ads.seco.clustername role
+17:07:20 <@ljl> therefore they can't get their own cluster name
+17:07:31 <@afaupell> ljl: right and metrics_beta requires a cluster name
+17:07:43 <@afaupell> later versions have the concept of a default cluster, we need to move to that
+17:08:09 <@afaupell> in this case the ads.seco.gd-bf1-evh role doesnt exist
+17:08:14 <@afaupell> so i created it and added the setting
+17:08:22 <@ljl> that would make tag updates for gd1/gms easier
+17:08:29 <@afaupell> you can see the setting if you run yinst restore -igor -n
+17:09:02 <@afaupell> -bash-3.2$ hostname
+17:09:02 <@afaupell> gd2136.adx.bf1.example.com
+17:09:02 <@afaupell> -bash-3.2$ yinst restore -igor -n
+17:09:14 <@marcj> which means that the updater does not catch what's in that cluster.
+17:09:42 <@afaupell> the updater?
+17:09:47 <@marcj> so ... is there documentation about that somewhere?
+17:09:59 <@afaupell> about the fact that theres a setting? no
+17:10:07 <@marcj> no ...
+17:10:20 <@marcj> about how one runs that updater.
+17:10:22 <@ljl> tribal knowledge
+17:10:33 <@afaupell> where exactly would we write down every single yinst setting
+17:10:39 <@afaupell> its package dependent
+17:10:47 <@afaupell> if you know a good place let me know
+17:10:50 <@marcj> maybe I didn't say that correctly.
+17:10:54 <@afaupell> and im not sure what an updater is
+17:10:57 <@marcj> I'm sorry.  Let me say that again.
+17:11:16 <@marcj> for role in `igor fetch -roles gd2131.adx.bf1.example.com`; do echo $role; echo "---------"; igor fetch 
+-rules $role | grep seco_remotewatchers.cluste; done
+17:11:19 <@marcj> gives:
+17:11:30 <@marcj> ads.seco.gd-bf1-evh
+17:11:30 <@marcj> ---------
+17:11:30 <@marcj> add yinst setting seco_remotewatchers.cluster=gd-bf1-evh
+17:11:54 <@marcj> vague recollection of config server says that there's an update script which syncs seco w/ igor
+17:12:03 <@marcj> which is what writes into that role, correct?
+17:12:14 <@afaupell> its the sync_igor script that does that
+17:12:18 <@afaupell> i ran it to create that cluster
+17:12:20 <@afaupell> sync_igor -c gd-bf1-evh
+17:12:20 <@afaupell> Creating ads.seco.gd-bf1-evh
+17:28:01 <@afaupell> the other thing im doing is changing ads.event_app_cfg_bf1 role to be @ads.seco.gd-bf1-evh instead of 
+having a list of the hosts
+17:28:09 <@afaupell> that way its easy to keep in sync with range
+17:28:58 <@afaupell> the host list is already out of date. for example it contains gd2150.adx.bf1.example.com
+17:29:08 <@afaupell> $ ping gd2150.adx.bf1.example.com
+17:29:08 <@afaupell> ping: unknown host gd2150.adx.bf1.example.com
+17:30:39 <@marcj> so ...
+17:30:47 <@marcj> there is a new role, which I'm testing.
+17:31:05 <@marcj> per hsim's request, I have to clean up igor roles.
+17:31:38 <@afaupell> where possible the member list should be migrated to use the ads.seco roles
+17:31:54 <@afaupell> this helps us keep igor host lists in sync with range
+</verbatim>
+
+---++apt 3.0 risemon patch (applies to gd2 cmriseidx and cmrisefe)
+
+For one host, from adm1009: 
+<verbatim>yooser=$USER; hosty=[hostname of box you want to fix]; cd /home/wing/risemon-patch
+rsync -av risemon-patch-v2 $hosty:.; mssh -r $hosty -o "user=root" "cd /home/$yooser/risemon-patch-v2; ./install"</verbatim>
+
+Discussion:
+<verbatim>11:43:15 <cparry> for when sp2 is done: (from adm1009, in /home/wing/risemon-patch) 
+mcmd -m 10 -r "%gd2-sp2-cmrisefe3" rsync -av risemon-patch-v2 HOSTNAME:.
+11:43:37 <cparry> mmssh -r "%gd2-sp2-cmrisefe3" -m 10 "cd /home/cparry/risemon-patch-v2 ; ./install"
+11:43:51 <cparry> mmssh is a little function to add the switches i always forget
+11:44:00 <ljl> heh
+11:44:33 <cparry> you can use it from my homedir i think and since we did this already you can skip the rsync (save a little 
+time)
+11:44:54 <cparry> make sure -o 'user=root' is in there
+11:44:59 <ljl> mssh -o "user=root" -r "%gd2-sp2-cmrisefe3" -m 10 "cd /home/cparry/risemon-patch-v2 ; ./install"
+11:45:02 <ljl> ??
+11:45:29 <ljl> group 0 in ac4 and sp2-3 are done, yes?
+11:45:33 <cparry> function mmssh { mssh -t 300 --collapse -g -1 -o "User=root" -o "StrictHostKeyChecking=no" $@
+11:45:36 <cparry> }
+11:46:06 <cparry> group0 of gd2-sp2-prod3 and gd2-ac4-prod1 are done per yesterdays cmr
+</verbatim>
+
+---++Emitter Monitoring Issue from !Break/Fix
+
+<verbatim>20:34:02 < cparry> i found solution for the host that marcj added that continue to alert
+20:34:14 < cparry> it is a watcher problem
+20:34:56 < siteshb> cool
+20:35:39 < cparry> want to learn? i'll take: gd1135.adx.mud.example.com you take gd1122?
+20:35:58 < siteshb> i am bouncing all
+20:36:08 < cparry> it won't help
+20:36:21 < siteshb> sure let me know the steps
+20:36:26 < cparry> so login to yours and i will mine, and walk you through it
+20:36:39 < siteshb> okay
+20:37:31 < siteshb> done
+20:37:45 < cparry> cool start with: sudo svstat /service/*
+20:38:07 < cparry> then notice that the uptimes for the watchers is looking not good, too small, as if restarting
+20:38:36 < siteshb> 0s
+20:38:53 < cparry> next run this: tail -f /service/watcher-ysar/log/main/current | tai64nlocal
+20:39:32 < siteshb> dont run ysar gather (use this on hosts with yinst and cron jobs) [0]
+20:40:07 < cparry> so i compared to a non-alerting possibly misconfigured host and found:
+20:40:08 < cparry> cparry@gd1063 > cat /service/watcher-ysar/run
+20:40:08 < cparry> #!/bin/sh
+20:40:08 < cparry> exec 2>&1
+20:40:08 < cparry> exec /home/y/libexec/ysar_watcher -g -d 300 -i gd-tw1-emit2
+20:40:11 < cparry> sleep 2
+20:40:23 < cparry> notice                                           ^^^^^^^^^^^
+20:40:28 < cparry> so i did
+20:40:50 < siteshb> hmm
+20:40:59 < cparry> sudo vi /service/watcher-*/run
+20:41:14 < cparry> we need to add -i $correct_cluster
+20:41:19 < cparry> so for us
+20:41:36 < cparry> cparry@rightfail > rshow gd1135.adx.mud.example.com
+20:41:36 < cparry> gd1135.adx.mud.example.com is in gd-mud-emit2 and has 20 hosts.
+20:41:39 < siteshb> yes
+20:41:59 < cparry> we need to add '-i gd-mud-emit2' to each of those watcher*/run command lines
+20:42:53 < cparry> in vi, use ':w' to write file, then ':n' to move on to next file
+20:44:05 < cparry> once you fix the first file using '$a<paste><esc>' you can then on next files just go to that line an hit 
+'.'
+20:44:42 < cparry> when done :wq
+20:44:53 < cparry> then 'sudo svstat /service/*' and things look much better
+20:45:08 < siteshb> ohh cool
+20:47:55 < cparry> i think gd1057.adx.tw1.example.com could be fixed maybe too, but lets see
+20:48:05 < cparry> http://adm1000.ads.corp.sp1.example.com/cgi-bin/watcher-monitor/w/gd-emit-dh
+20:48:06 < tinybot> http://tiny.corp.example.com/3pkh0o
+20:48:09 < cparry> to check
+20:50:36 < siteshb> hey got disconnected... i will fix gd1122 now
+20:50:57 < cparry> no worries
+ </verbatim>
+
+---++Package that owns a file
+
+<verbatim>11:42:30 <@wing> marcj: also: yinst ls -files /path/to/the/file/you/are/curious/about
+11:42:31 <@wing> ^^
+11:42:36 <@wing> will tell you what package "owns" that file.
+11:42:43 <@marcj> cool. thanks.</verbatim>
+
+---++Stuff Won't Send to !DH?  
+
+   * Are the hosts in seco/dh-emitters/nodes.cf?
+   * Are the hosts in the !REVENUESERVE_NETWORKS !ACL?
+
+</verbatim>
+
+---++Distro Transformer Connect CADS Bridges to CADS New Router
+
+<verbatim>22:26:53 < anujj> rajeevc: we are going to start the CMR:556032 - at 11:00 A.M
+23:38:47 < anujj>
+23:38:51 < anujj> gs ack plz - http://bug.corp.example.com/show_bug.cgi?id=5837778&mark=1#c1
+23:38:54 < anujj> schinnan:    ^
+Day changed to 26 Sep 2012
+00:10:40 < anujj> mssh -r "%$transformer" 'sudo svstat /service/distro-*downstream*'
+00:10:45 < anujj> mssh -r "%$transformer" 'sudo svc -d /service/distro-*downstream*'
+00:10:57 < anujj> mssh -r "%$transformer" 'sudo svstat /service/distro-*downstream*'
+00:11:34 < anujj> mssh -r "%%$cadsrange" 'sudo svstat  /service/distro-recvlog-upstream-cid0*'
+00:11:44 < anujj>  mssh -r "%%$cadsrange" 'sudo svc -d /service/distro-recvlog-upstream-cid0*'
+00:11:50 < anujj> mssh -r "%%$cadsrange" 'sudo svstat  /service/distro-recvlog-upstream-cid0*'
+00:12:19 < anujj> http://pastebin.corp.example.com/206364
+00:12:20 < anujj>
+00:13:18 < anujj> mssh -r "%$transformer" "echo;grep 'mode=server' /home/y/var/distro-dynamic/transformlog/procinfo/downstream-*|
+                  awk '{print \$2}'"
+00:13:24 < anujj> router:di2022.adx.kr3.example.com
+00:13:59 < anujj> mssh -r "%%$cadsrange" "egrep --color 'di2022.adx.kr3.example.com'
+                  /home/y/var/distro-dynamic/recvlog/procinfo/upstream-cid*"
+00:14:19 < anujj> http://pastebin.corp.example.com/206365
+00:14:19 < anujj>
+00:40:58 < anujj>  mssh -r "%$transformer" 'sudo /usr/libexec/make-distro-downstream  --remove -q transformlog -H
+                  di2022.adx.kr3.example.com'
+00:41:16 < anujj>  mssh -r "%$transformer" 'sudo /usr/libexec/make-distro-downstream  --remove -q transformlog -H
+                  di2022.adx.kr3.example.com --yes'
+00:41:42 < anujj> mssh -r "%%$cadsrange" 'sudo /usr/libexec/make-distro-upstream  --cid 0 --remove --yes'
+00:41:46 < anujj>
+00:42:04 < anujj> http://pastebin.corp.example.com/206372
+00:42:04 < anujj>
+00:42:22 < anujj> for i in `er -e %%$cadsrange`
+00:42:22 < anujj> do
+00:42:22 < anujj> key=$(mssh -r "%$transformer" "sudo /usr/libexec/make-distro-downstream -q transformlog -H  ${i} 
+--yes"|grep connection|sed s/"connection id: "//g)
+00:42:25 < anujj> echo -n "$i: "; echo  $key
+00:42:28 < anujj> mssh -r ${i} "sudo /usr/libexec/make-distro-upstream -k $key --yes"
+00:42:30 < anujj> done
+00:42:33 < anujj>
+00:44:46 < anujj> http://pastebin.corp.example.com/206373
+00:44:47 < anujj>
+00:44:53 < anujj>  mssh -r "%$transformer" 'sudo svc -d /service/distro-*downstream*'
+00:45:20 < anujj> voln=$( mssh -r  "%$transformer"  'echo; find /home/y/var/distro/transformlog/ -iname "vol*" -ctime -1  
+-ls|sort -k 11|head -n 1|awk "{print \$11}"|awk -F"/" "{print \$7}"'|grep '^vol'|sed s/^vol//g)
+00:45:34 < anujj>  mssh -r "%$transformer" 'meta show /home/y/var/distro/transformlog/'|grep '=mark='|awk -F= '{print $3}'
+00:45:37 < anujj>
+00:45:49 < anujj> $ echo $voln
+00:45:50 < anujj> 000463
+00:45:50 < anujj>
+00:46:00 < anujj> for ridn in `seq 0 15`; do mssh -r "%$transformer" "meta set /home/y/var/distro/transformlog/ $ridn 
+$voln"; done
+00:47:31 < anujj> http://pastebin.corp.example.com/206374
+00:47:31 < anujj>
+00:47:59 < anujj> mssh -r "%$transformer" 'sudo svc -u /service/distro-*downstream*'
+00:48:24 < anujj> http://pastebin.corp.example.com/206375
+00:48:25 < anujj>
+00:51:04 < anujj> transformer=gd2-kr3-dt4p1
+00:51:05 < anujj> cadsrange=gd2-kr3-cads2
+00:51:12 < anujj> mssh -r "%$transformer" 'sudo svstat /service/distro-*downstream*'
+00:51:18 < anujj> mssh -r "%$transformer" 'sudo svc -d /service/distro-*downstream*'
+00:51:27 < anujj> mssh -r "%$transformer" 'sudo svstat /service/distro-*downstream*'
+00:51:42 < anujj> mssh -r "%%$cadsrange" 'sudo svstat  /service/distro-recvlog-upstream-cid1*'
+00:51:48 < anujj> mssh -r "%%$cadsrange" 'sudo svc -d /service/distro-recvlog-upstream-cid1*'
+00:51:55 < anujj> mssh -r "%%$cadsrange" 'sudo svstat  /service/distro-recvlog-upstream-cid1*'
+00:52:14 < anujj> http://pastebin.corp.example.com/206376
+00:52:14 < anujj>
+00:52:45 < anujj> mssh -r "%$transformer" "echo;grep 'mode=server' 
+/home/y/var/distro-dynamic/transformlog/procinfo/downstream-*| awk '{print \$2}'"
+00:52:58 < anujj> router: di2001.adx.kr3.example.com
+00:53:49 < anujj>
+00:54:01 < anujj> mssh -r "%%$cadsrange" "egrep --color 'di2001.adx.kr3.example.com'
+                  /home/y/var/distro-dynamic/recvlog/procinfo/upstream-cid*"
+00:54:31 < anujj> http://pastebin.corp.example.com/206377
+00:54:31 < anujj>
+01:03:29 < anujj> mssh -r "%$transformer" 'sudo /usr/libexec/make-distro-downstream  --remove -q transformlog -H
+                  di2001.adx.kr3.example.com'
+01:03:35 < anujj> mssh -r "%$transformer" 'sudo /usr/libexec/make-distro-downstream  --remove -q transformlog -H
+                  di2001.adx.kr3.example.com --yes'
+01:03:45 < anujj> mssh -r "%%$cadsrange" 'sudo /usr/libexec/make-distro-upstream  --cid 1 --remove --yes'
+01:03:48 < anujj>
+01:04:33 < anujj> http://pastebin.corp.example.com/206382
+01:04:33 < anujj>
+01:04:47 < anujj> for i in `er -e %%$cadsrange`
+01:04:47 < anujj> do
+01:04:47 < anujj> key=$(mssh -r "%$transformer" "sudo /usr/libexec/make-distro-downstream -q transformlog -H  ${i} 
+--yes"|grep connection|sed s/"connection id: "//g)
+01:04:50 < anujj> echo -n "$i: "; echo  $key
+01:04:53 < anujj> mssh -r ${i} "sudo /usr/libexec/make-distro-upstream -k $key --yes"
+01:04:55 < anujj> done
+01:04:58 < anujj>
+01:06:03 < anujj> mssh -r "%$transformer" 'sudo svc -d /service/distro-*downstream*'
+</verbatim>
+
+---++Hosts In a Cluster/Colo Rebooting
+
+On opsdb for any host, 
+   * in the boot box column you'll see a console name
+   * port will be the bootstrip
+   * bplug will be the individual outlets
+The easiest way to look at the info is to click on the console to see its opsdb, toward the bottom there is an entire list 
+of all hosts bootboxed and consoled to that console.
+
+---++Building seco_procinfo_server
+
+You have to set =SRCTOP= via <verbatim>export SRCTOP=.</verbatim> before the stupid thing will build.
+
+---++Map a facpx to a gdfe
+
+=/home/y/bin/ycfl load /home/y/conf/facgd/facgd.procinfo > /tmp/phile=
+Edit /tmp/phile to have the one host (or hosts) you want in the server section
+=sudo cp /tmp/phile /home/y/conf/facgd/facgd.procinfo=
+
+---++Console Logs on tool1 for a given host
+Example: For gd1007.adx.kr3.example.com, go to tool1.ops.kr3.example.com, and look at 
+=/home/info/hosts/gd1007.adx.kr3.example.com/console.log=  The file is /home/info/hosts/&lt;hostname&gt;/console.log
+
+---++Hints for yti/cds subscriber stat
+<verbatim>16:52:18 <@wing> w00t
+16:52:21 <@wing> Thu Jan 31 00:51:53 2013: E 31-005153.870127 14770 /home/y/var/db/yti/yti.mdbm: open failure: Permission denied
+16:52:24 <@wing> Thu Jan 31 00:51:53 2013: N 31-005153.870279 14770 yti reinitializing db (/home/y/var/db/yti/yti.mdbm)
+16:52:27 <@wing> Thu Jan 31 00:51:53 2013: E 31-005153.870307 14770 /home/y/var/db/yti/yti.mdbm: open failure: Permission denied
+16:52:30 <@wing>  wtf
+16:52:39 <@hsim> nice
+16:52:57 < ljl> permissions
+16:53:04 <@wing> that file is owned by root.  this is probably a bug in our monitoring code corrupting the perms on that file
+16:53:08 <@wing>
+16:53:10 < ljl> yti needs to be owned by ads
+...
+17:16:42 <@hsim> < praneeth> hsim: whats the magic ?
+17:17:47 <@hsim> yinst stop; rm /home/y/lib/ads/qpr*shm /home/y/lib/ads/emi*mdbm; if E 31-005153.870127 14770
+                 /home/y/var/db/yti/yti.mdbm: open failure: Permission denied; change the ownership of that file to ads:wheel;
+                 yinst start
+17:18:31 < praneeth> okay
+17:18:43 < praneeth> so cleaning up all of shm process did the magic
+17:18:47 < praneeth> thank you
+17:19:15 < ljl> you could just do a "sudo chown ads:wheel /home/y/var/db/yti/yti.mdbm" as a precaution
+17:20:25 < ljl> after doing the other stuff, that is</verbatim>
+
+

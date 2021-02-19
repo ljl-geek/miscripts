@@ -1,0 +1,22 @@
+Host *
+ServerAliveInterval 30
+ServerAliveCountMax 10
+ForwardAgent yes
+# ForwardX11 yes
+
+Host purplebyte*
+User ljlgeek
+ProxyCommand ssh -q -A -l ljlgeek purplebyte -p 2222 nc %h %p
+#UserKnownHostsFile /dev/null
+
+Host garnet*
+User ljl
+ProxyCommand ssh -q -A -l ljl garnet -p 2222 nc %h %p
+#UserKnownHostsFile /dev/null
+
+#Host build
+
+#Host jenkins
+
+#Host stage*
+

@@ -1,0 +1,46 @@
+hostz=`hostname -s`
+
+#result=`mysql -B --connect-timeout=3 -unagios -p*** -h admin3 racktables -e 'select AV.string_value, RO.name from AttributeValue AV, RackObject RO where AV.attr_id = 10001 AND RO.id = AV.object_id AND RO.name LIKE "'$hostz'"' \
+#                       | awk '/con/ {print " echo -e \"\\r\\n\\r\\n\\r\\n\" | nc -i 5 "$1" "$2" | grep "$3" | wc -l "}' | bash`
+
+query=`mysql -B --connect-timeout=3 -unagios -p*** -h admin3 racktables -e 'select AV.string_value, RO.name from AttributeValue AV, RackObject RO where AV.attr_id = 10001 AND RO.id = AV.object_id AND RO.name LIKE "'$hostz'"'
+echo $query
+
+echo $query | awk '{print $3}' | xargs nslookup 
+
+=======
+
+(nagios@admin3) [racktables] mysql> select AV.string_value, RO.name from AttributeValue AV, RackObject RO where AV.attr_id = 10001 AND RO.id = AV.object_id AND RO.name LIKE "shard14c";
++--------------+----------+
+| string_value | name     |
++--------------+----------+
+| con405 7019  | shard14c |
++--------------+----------+
+1 row in set (0.00 sec)
+
+=======
+
+ result=`mysql -B --connect-timeout=3 -unagios -p*** -h admin3 racktables -e 'select AV.string_value, RO.name from AttributeValue AV, RackObject RO where AV.attr_id = 10001 AND RO.id = AV.object_id AND RO.name LIKE "'$hosta'"' |awk '/con/ {print " echo -e \"\\r\\n\\r\\n\\r\\n\" | nc -i 5 "$1" "$2" | grep "$3" | wc -l "}' | bash `
+
+==========
+
+hostz=`hostname -s`
+#mysql query to get console record
+query=`mysql --connect-timeout=3 -unagios -p*** -h admin3 racktables -e "select AV.string_value, RO.name from AttributeValue AV, RackObject RO where AV.attr_id = 10001 AND RO.id = AV.object_id AND RO.name LIKE \"$hostz\""`
+echo $query
+# this pulls the console hostname out of it (regardless of how it’s formatted)
+if [[ $query =~ "@" ]] 
+then
+conhost="con$(echo $query | awk '{ print $4 }')"
+# except con111 doesn’t exist in dns
+else
+conhost=$(echo $query | awk '{ print $3 }') 
+fi
+# now we lookup the host, and ping it to see if it’s alive
+nslookup $conhost 
+ping -c 5 $conhost
+
+
+scp shard22-master:/usr/local/nagios/nrpe-configs/foo.cfg .
+sudo cp foo.cfg /usr/local/nagios/nrpe-configs/
+sudo service nrpe restart

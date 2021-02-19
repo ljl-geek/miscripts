@@ -1,0 +1,7 @@
+Check etl, shardx memory only. crit=80% of "active (anon)" + active (file) is used mem total (Active total)  - nrpe check. 
+
+sk5@
+
+check_ncluster_status on queen, should tell if node has issue
+
+cpu avg crit=85% used on etl, shardx

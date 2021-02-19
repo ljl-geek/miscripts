@@ -1,0 +1,25 @@
+17:26 <@jadestar> Yeah after wget $url_for_yinst_from_dist
+17:26 < fsaberi> vi /usr/local/bin/yinst ; copy and paste yinst from here: http://dist.corp.example.com/bin/yinst.yinst7stable
+
+find . -type f -name "*.bak" -exec rm -f {} \;
+
+
+21:50 <hsim> there is something special with sp1/sk1
+21:50 <ljl> see, the release is already pushed, it just needs to be switched
+21:50 <hsim> in which we can connect to from the internet
+21:51 <hsim> but for ac4..we have to connect through socks
+21:51 <ljl> sp1/sk1 don't need socks
+21:46 <hsim> so on firefox..preferrence
+21:46 <hsim> on the advanced tab
+21:47 <hsim> go to network
+21:47 <hsim> and settings
+21:48 <hsim> i manually change to look at socks.corp.example.com port
+21:48 <hsim> port 1080
+21:48 <ljl> v4 or v5?
+21:49 <hsim> im on v5
+
+edit a file in place:
+
+perl -pi -e 's/old regex/new string/' <file(s)>
+perl -pi.orig -e 's/old regex/new string/' <file(s)>  # with backup
+

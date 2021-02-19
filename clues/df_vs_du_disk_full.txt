@@ -1,0 +1,40 @@
+NagiosBOT [23:02] 
+nagios100-tdev-foo-p/Nagios Process is CRITICAL:
+NAGIOS CRITICAL: Cannot parse Nagios log file for valid time
+
+----- Today August 27th, 2015 -----
+
+LJ Laubenheimer [13:16] 
+On nagios100.foo tdev, /var/log is full
+
+removing all of the old perfdata logs
+
+NagiosBOT [13:16] 
+nagios100-tdev-foo-p/Nagios Process is OK
+
+LJ Laubenheimer [13:34] 
+sudo lsof | grep /var/log:
+{code}nagios    24871    nagios    7u      REG              253,5 10366954440      57350 /var/log/mod_gearman/mod_gearman_neb.log.1 (deleted)
+{code}
+Uh, Oh!
+
+The nagios process is holding a deleted log file open and is still writing to it
+
+{code}[ljl@nagios100 ~]$ sudo service nagios reload
+Running configuration check...done.
+Reloading nagios configuration...done
+[ljl@nagios100 ~]$ sudo lsof | grep /var/log | grep deleted
+java      15638  logstash    1w      REG              253,5       589     499715 /var/log/logstash/agent.log.1 (deleted)
+java      15638  logstash    2w      REG              253,5       589     499715 /var/log/logstash/agent.log.1 (deleted)
+syslog-ng 27999      root   20w      REG              253,5     74601         56 /var/log/maillog.1 (deleted)
+syslog-ng 27999      root   24w      REG              253,5     56274         44 /var/log/cron.1 (deleted)
+[ljl@nagios100 ~]$ df -h | grep /var/log
+/dev/mapper/vg00-lvvarlog                           12G  1.4G  9.9G  13% /var/log
+10.105.9.231:/var/log/nagios/archive-nfs-px-dev    1.0T  137G  888G  14% /var/log/nagios/archives
+{code}
+
+Problem solved
+
+apparently when the mod_gearman log rotates, it doesn't hup the nagios process
+
+The clue was that the sizes of the directories and files on the /var/log partition were less than the space taken up shown in df, which means that a deleted file was still being held open by a process.  sudo lsof | grep /var/log shows the files that are open, what process has them open, and how big they are on disk

@@ -1,0 +1,168 @@
+Warning: Anything that uses a password macro in a command needs to have the macro come as the last argument, otherwise the nag process drops the rest.
+
+Note: On new unmanaged hosts, '  "notifications_enabled": "0",' will disabled notifications on both hosts and services
+
+Remember: If you have to revise one file in a commit set, munge the whitespace in the others so they build together!
+
+## When git wants to merge, just delete all uncomment lines in merge file to abort, then 
+git stash; git rebase; git pull; git push
+
+# find nag problems
+sudo -u nagios /usr/sbin/nagios -v /etc/nagios/nagios.cfg
+
+# find unamanaged node by either case
+ up=USRCCVCP02GAPW;  low=$(perl -e "print lc('$up');"); find . -name $up.json; find . -name $low.json
+
+## line for tag prod ready
+Approved - https://confluence.gid.example.com/display/MO/Approval+Confirmation+-+PROD - MonOps-#### What changed
+
+## log monitoring incantations
+sudo -u nagios /usr/lib64/nagios/plugins/check_nrpe -t 20 -n -u -H 10.105.120.66 -c check_unix_logs -a 'localhost /var/tmp/LOGMONITOR autonda /opt/Weblogic/user_projects/domains/EBSAccessGate/servers/AdminServer/logs/access.log 60m 'ASADMIN.*is.*not.*authorized' '.' 1 1 ngf_accessgate_asadmin_auth -ndfoundn'
+
+'localhost /var/tmp/LOGMONITOR autonda /opt/Weblogic/user_projects/domains/EBSAccessGate/servers/AdminServer/logs/access.log 60m 'ASADMIN.*is.*not.*authorized_P_exception.*creating.*connection.*pool.*erpr12.*IO.*Error:.*Connection.*reset' '.' 1 1 ngf_accessgate_asadmin_auth -ndshow'
+
+localhost  /var/tmp/logXray autonda /opt/apps/webpos-services/Tenders/logs/Tenders-$(hostname)-7080.log 60m 'authAction.*:.*ERROR_P_authAction.*:.*DECLINED' '.' 1 5 snapsell_tenders_decline_logchk -ndfoundn  <= should be -ndshow
+
+## grab numbers, padding, etc
+perl -ne 'print "$1\n" if /(\d{1,})/;' store-reg-test.txt
+ grep UserName Store_Out_Of_Compliance_formatted.json | sed 's/            "UserName": //g' |  egrep -i "(on|br|gp|at)" | perl -ne 'print sprintf("%05d", $1)."\n" if /(\d{1,})/;' | sort -u
+./check_nrpe -n -u -H 10.105.71.26 -c check_unix_logs -a 'localhost /var/tmp/LOGMONITOR autoblz /opt/apps/GSA_Jive_Connector/jive_adaptor/logs/adaptor_ast_log    10m  'rror_P_xception_P_fail'  '.'  5  10  testingI  -ndfoundn'
+
+# last update time 
+pfoo exec -E 'nodes.search("name:xgfoofssap001.*") {|n| puts "#{n.name} => " "#{Time.at(n[:ohai_time])}"}'
+
+# what's the nag conf
+pfoo node show xgfoofssap001.foo.example.com -a nagiosconfig -Fj
+
+# win checks
+DATA BAGS => NAGIOS services
+-- make check(s)
+data bags => nagios hostgroups
+-- make hostgroup containing related checks
+rcc/cha => > > 
+-- include hostgroup in hostgroups configured (see chanagios_hosts]$ more PGfooDSYNC001.json)
+
+  "notifications_enabled": "0",
+
+
+# managed flow
+nagios_commands => roles (w services and nrpe checks) => hosts
+# unamanaged flow
+nagios_commands => nagios_services => nagios_hostgroups => unmanaged_hosts
+
+# when nagios starts and immediately falls over with a segfault:
+mojomo [13:35] 
+@ljl: did not have to reboot. just disabled the broker modules in nagios.cfg, started up nagios.  waited about 10 seconds, stopped nagios. enabled the broker modules.  then started it back up again.
+doesnt always work, but it does the majority of time
+
+
+ cd /usr/lib64/nagios/plugins
+
+## gearman primary processes check - should match the configs/init
+ ps -ef | grep [m]od_gearman_worker  | awk '($3 == 1) {print $0}' 
+
+## adding whole host contact_groups to a role, put them *after* the servicechecks
+        "default_attributes": {
+                "nagiosconfig": {
+                        "monitoring_of_nagios": {
+                                "service_list": [
+                                ]
+                        },
+                        "servicecheck": {
+                                "check_.....": {
+                                },
+                                "check_.....": {
+                                }
+                        },
+                        "node": {
+                                "contact_groups": [
+                                        "li0v4q9",
+                                        "notify-slack"
+                                ]
+                        }
+                }
+        },
+        "override_attributes": {
+.
+.
+.
+# snippet for override nag conf
+         "override_attributes": {
+               "nagiosconfig": {
+                          "base": {
+                              "service_list": [ "check_all_disks" ]
+                           },
+                           "servicecheck": {
+                              "check_all_disks": {
+                                       "service_description": "Free Space All Disks - Excluding /var/mqm",
+                                       "command": "nrpe_args",
+                                       "command_options": [ "check_disks", "'-w 20% -c 10% -x /var/mqm'" ],
+                                       "contact_groups": [ "hcl_unix" ]
+                              }
+                          }
+              }
+       },
+# prod chef cookbooks
+ http://chefci001.foo.example.com - Jenkins Job for building cookbooks for PROD
+
+#### this script sucks, needs to be fixed (example-cookbook/exampleChef)
+[ljl@dgfoonagllap001 exampleChef-1]$ git log ./files/default/check_chef_run.pl
+commit d7b5d72c4724ec3146991017d115d4f3565ee482
+Author: John Cook <jcook@fastrobot.com>
+Date:   Thu Oct 18 12:27:28 2012 -0700
+
+    [JC] Adding in nagios plugin and nrpe check to verify chef run
+
+### bad rpm db -- "Error: database disk image is malformed" when running yum or rpm install
+yum clean all; yum clean metadata; yum clean dbcache; rm -rf /var/cache/yum/*; rm -f /var/lib/rpm/__db*; rpm --rebuilddb; yum history new
+
+### windoze to force open a port in the FW eg 80
+netsh advfirewall firewall add rule name="Open Port 80" dir=in action=allow protocol=TCP localport=80
+
+#### show windoze fw rules
+##[12:26] peter: if the remote hands are willing to dump the firewall config and send it to you:
+netsh advfirewall firewall show rule name=all
+
+### REMEMBER! No * , ( ) in nagios descriptions
+Error: The description string for service 'Datastage (Primary) Processes' on host 'xdsgdb1' contains one or more illegal characters.
+Error: The description string for service 'Free Space /apps/* disks' on host 'xdsgdb1' contains one or more illegal characters.
+Error: The description string for service 'Free Space /opt/* disks' on host 'xdsgdb1' contains one or more illegal characters.
+Error: The description string for service 'Free Space /opt/IBM/* disks' on host 'xdsgdb1' contains one or more illegal characters.
+Error: The description string for service 'Free Space /var/mqm, /MQHA disks' on host 'xdsgdb1' contains one or more illegal characters.
+Error: The description string for service 'Free space /home/* disks' on host 'xdsgdb1' contains one or more illegal characters.
+
+## make sure bigpanda is on nagios boxen
+ sudo groupadd bigpanda; sudo useradd -g bigpanda -G nagios -d /home/bigpanda -s /bin/false bigpanda; sudo chef-client
+
+# ssh agent command line
+SSH_ENV="$HOME/.ssh/environment"; /usr/bin/ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"; chmod 600 "${SSH_ENV}"; . "${SSH_ENV}" > /dev/null; /usr/bin/ssh-add
+
+## for memory - take a string a=b or similar and make it a variable
+~]$ string="foo=bar; baz=100"
+~]$ eval $string
+ ~]$ echo $foo; echo $baz
+bar
+100
+
+## bash, variable as variable once removed
+X=foo
+Y=X
+eval "Z=\$$Y"
+## sets Z to "foo"
+
+## ad hostgroups in managed nodes
+    "nagiosconfig": {
+      "node": {
+        "hostgroups": [ "Oracle_Retail_RAC" ]
+      }
+    },
+
+### servicegroups
+{
+  "id": "SERVICES_XXXX",
+  "services": [
+    "service_name_in_chef",
+    "not_command_or_role_name"
+  ]
+}
+

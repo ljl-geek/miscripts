@@ -1,0 +1,10 @@
+## on rhel 6.4 vmware
+sudo yum install zlib-devel xml2-devel
+chef exec bundle config build.nokogiri --use-system-libraries --with-xml2-include=/usr/include/libxml2/libxml
+
+## Firewall - the cloud stack is in the prod network, so can't get there from dev w/o junos
+[li0v4q9@dgfoonagllap001 openstack_monops_keypairs]$ wget https://cloud.foo.example.com/project/access_and_security/keypairs/ljlcb/generate/
+--2015-05-06 14:19:29--  https://cloud.foo.example.com/project/access_and_security/keypairs/ljlcb/generate/
+Resolving cloud.phx.example.com... 10.107.200.15
+Connecting to cloud.phx.example.com|10.107.200.15|:443... failed: Connection timed out.
+Retrying.

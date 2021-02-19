@@ -1,0 +1,124 @@
+ Nagios & Icinga Implementation Notes
+Skip to end of metadata
+
+    Created and last modified by LJ Laubenheimer on Jul 17, 2014
+
+Go to start of metadata
+Monitoring Best Practices
+
+Alerts should:
+
+    Be actionable
+    Have SOPs (action to take)
+    Have configurable thresholds (not hard coded into script)
+    Have commented and maintainable code (shell is simplest)
+    Be checked in and/or packaged
+    Have a business reason to alert on it
+    Be tested on both RHEL 5 and 6
+    Not reinvent the wheel (re-implement a functioning nagios check)
+    Provide performance data if applicable
+
+ToDo (unordered):
+
+    Set up app-services-db to do check_threads_running (requires nrpe config example.cfg or shard.cfg to be on the shards) Done US2763
+    Fix load warning thresholds on alpha boxes so they aren't so noisy, but still will scream if there's a critical problem Done
+    Fix thresholds on slow queries to work with q/sec thresholds (requires nrpe config change to example.cfg on shards) Done on RHEL5
+    Fix or kill console alert - if consoles are really dead, fix them, or remove alert
+    Find out why "uptime" is monitored, remove if possible Done
+    Fix check_sec to actually find the process - actually fixed the sec init script to find running instances, etc
+    [long term] Combine process checks to one check, make it one that figures out what kind of server it is and does the right thing based on roles, master/slave and pod
+    Write sop for threads running (draft in homedir) Done US2763
+    Write sop for slow queries? Done TA16271
+    Fix nrpe on admin4 done, nrpe had too many procs, redundant daemons. Stopped nrpe service, killed extra procs, started nrpe service
+    Find missing hosts, and watch them too (admin5??, build??) - Partial, TA17029, TA17113, OPS-4632 (Icinga via Salt finds all hosts in salt.)
+    Spawn of the devil - figure out why some boxes incorrectly respawn tons of sec, crond - too many procs - services and shards - sec fixed (needed full paths in start up script because bad env)
+    Write "Nagios Alert Handling Cheatsheet" to give practices to keep nagios green and clean (no disabling alerts - use downtime or acks; no shutting off notifications - use downtime or acks) Done
+    Develop nagios "this host is down" alert acking script
+    Develop nagios bulk downtime scripts (adapt the one from the web) so that they don't just turn off the nag when doing deployments Done
+    Make a "enable notifications" script that enables notifications, period.  These should seldom be shut off
+    Make a "enable active checks" script.  Seriously, disabling active checks leaves the system monitoring stale, useless, and dangerously wrong. If we could figure out a way to make people unable to run this command, we should.  Ack or downtime a host.  Otherwise, why do we even have monitoring, if people can just willy-nilly disable the service checks on a host? The only exception to this is checks that adversely impact metrics, but then they should simply be removed.
+    Fix backups and zetta to be real, or disable check
+
+    Bad check (false good):- Not really - those hosts don't run puppet, they have salt only.  Better to exclude them from the list to check in the nagios configs.
+
+    check puppet
+
+    OK
+
+    02-11-2014 16:54:31
+
+    50d 13h 43m 46s
+
+    1/6
+
+    PROCS OK: 0 processes with command name 'ruby'
+     Remove dead host fileserv4 Done, TA164440, OPS-4018
+    check_db_iops script /usr/local/nagios/libexec/check_iops.sh on RHEL 5 will always return 0 (OK) unless NRPE is down, even if [ -f "/tmp/iops.txt" ] fails, because the "exit 0" is outside the if-then loop. The /tmpfile is populated by a cron job that checks "/dev/sda" for iostat over 5 minutes and does some sed and cut (but /dev/sda3 is the only sda in use, unless swap).  Cron when run by hand works fine, but makes empty file.  Done - TA16590
+    set check_activemq to use generic_service_page Done TA16634
+    Add pod hostgroups Done
+    Get rid of unused gmond check (per Luu) Done
+    Fix "tomcat process" checks - rename, adjust thresholds properly.  For layer, should be "jexample-servicelayer" and process == 1+, for alpha should be "jexample-service" and == 1. Done, except for puppet push (why does the puppet run say "Stage"??)
+    Word Press + varnish process check on pub Exists already
+    VIP, heartbeat, pools on F5
+    Can't get rid of $#$$^# "purge" - it's a half-baked reimplementation of logrotate needed to rotate the log4j generated logs (log4j doesn't play well with regular linux utilities, then again, neither does tomcat or any other java based special snowflake.)
+     
+
+Comments, work notes
+
+    Three repos, FFS: git on admin4, svn puppet and svn conf on admin3
+    Two config management sw - salt and puppet, but clustering managed in /etc/example.ini
+    /deploy/meta has things like roles, pod, site and tags - use this with puppet/salt to configure checks when deployed?
+    /etc/example.ini does not agree with itself on the number of shards, the list of shards, and the actual shards in use.  Bad.  - This has now been fixed.
+    Two different versions of nrpe: nrpe and nrpe-example. The first is from our repo, the second is public maintenance - still trying to get clear space to roll out change to prod.
+    Salt doesn't work right for RHEL 5 nrpe-example. It will be better when RHEL 5 and 6 are running the same version.  Still some checks that rely on OS based utilities will need different versions for RHEL 5 and 6.  This is handled well in salt by determining the OS and pushing out the right scripts to the right place.
+    HADR project is to try to finally have redundancy - this stuff is scary without it
+    Not all hosts are in srv/salt/pillar/hostlist.sls - FML.  This is improving, but the unmanaged hosts do need to be accounted for.
+     
+
+Severe Annoyances!!
+
+    People who ignore alerts because they "send spam". Maybe if they fixed stuff that wouldn't be an issue.
+    People who turn off notifications, because they are doing a deployment, then don't re-enable, or even communicate why!
+    People who turn off services, again without documentation, and then accuse you of breaking stuff when you turn stuff back on when they wouldn't communicate why they turned it off!!
+    People who try to blame restarting a lightweight service like nrpe for servers crashing. If restarting a service that has to run for monitoring to work crashes a server, then we need to shut the entire thing off and go live in a cave.
+    Communication - In spite of having three (3) four (4) different chat clients, the vital stuff is not written down anywhere, and people like it that way, makes them feel needed and important.
+    Standard operating processes seem to be anathema to ops. Need to get cowboy hats and spurs. Even if there are written procedures, some people don't want to follow them.  This is changing now, thank you Narendra.
+    Even having a failover site (AWS) will not fix sloppy administration or faulty code. It'll just make it more expensive.
+    If we keep having problems with each deployment for new features, maybe we should stop adding new features and spend a sprint or three on site stability and deployment reproduceability.
+    This hero syndrome is for the birds. If you are the sole keeper of an area of knowledge, you have failed your teammates and professionally. If work grinds to a screeching halt because you take a vacation, you are a fault in the system.
+    The week I started, Steve and I tried to rattle peoples cage about dead drives. Now the data center people want serial numbers in order to find and fix dead drives!! (Yet if it causes a MacGuyver, monitoring will be blamed.)
+    If slave servers are crashing when you run a certain mysql command, and it is reproducible, it should be a MacGuyver, even if there is no immediate customer impact! A potential customer impact due to lack of redundancy should be enough to open a low severity incident.  The rules on what is an incident seem very fuzzy.
+    Why in the hell would someone use log4j such that they also had to reimplement logrotate? Why?
+    Who is the genius who decide that /tmp was a good place for logs? Was /var/log or /deploy/log not good enough? Too good, too obvious? *head|desk*
+
+RHEL6 and Nagios/NRPE issues
+
+    On the RHEL6 shards (1slave,64-8284)
+        a) no ldap,
+        b) nagios is a RHEL6 install, done as nagios-common-3.5.0-1.el6.x86_64 - into /usr/lib64/nagios and a bunch of random plugin rpms - this is different from /usr/local/nagios on RHEL5 (insert rant about why people have to move stuff between releases of the same OS.)
+        c) nrpe is /usr/sbin/nrpe, from generic rpm nrpe-2.14-3.el6.x86_64
+        d) no example.cfg, nrpe.cfg is /etc/nrpe.cfg, which is in git repo on admin as ./git/srv/salt/nrpe/nrpe.cfg
+        e) mysql checks are based on /usr/local/libexec/nagios_check_mysql_health, which is not in git or svn - fixed
+        f) no puppet, config by salt only - we will be hopefully migrating away from the organic puppet install
+        g) nrpe scripts are in /usr/local/libexec as nagios_(scriptname) - fixed, they now are where they belong, in /usr/lib64/nagios/plugins
+        h) openldap is present, but unconfigured (literally the default conf file) - logins and keys are pushed by salt, data in directory git/src/pillar
+        i) packages seem to have all been grabbed from http://mirrors.kernel.org/fedora-epel/6/x86_64/
+        j) RHEL6 servers are configured by salt.  NRPE is in git/srv/salt/nrpe, and where it goes on the server is controlled by git/srv/salt/nrpe/init.sls  "root_nagios_checks_cron" is only installed on sunnyvale hosts
+        k) check_iops on RHEL6 uses sar, in a very clunky way that doesn't quite work right in a python script.  The python script doesn't work on RHEL5 Fixed - wrote a new check_iops.sh script that works on both versions
+    What else is rhel6?
+    RHEL6 shards have " Unknown failure in check_console. " because racktables config for console is either missing (there is no console) or wrong, and no one seems inclined to fix it.
+    On RHEL6 boxes, if they have the example.repo or the local yum.example repo under CentOS-Base.repo, it will barf, and be unable to get anything, because there is no 6.3 area, and the plain example repo has not been updated (makerepo, IIRC). These need to be commented out. Even if you leave these live, you won't get the latest packages because whoever added them to the directory didn't makerepo.
+
+    To get packages like MegaCli and perl-Systemupd-Basic, (on admin2 under /var/www/html/example/noarch/), you need to do things like
+
+    wget http://yum.prod.example.com/yum/example/noarch/MegaCli-8.07.06-1.noarch.rpm
+
+    and save it to /root or something, then do
+
+    sudo rpm -Uvh /root/MegaCli-8.07.06-1.noarch.rpm
+
+Staging Nagios
+
+    Access? Finally, thank you Seth.
+    All red - monitoring non-existent servers
+

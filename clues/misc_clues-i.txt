@@ -1,0 +1,168 @@
+rakesh [15:05] 
+Need to add our uid's in /deploy/svn-example/example/hooks/commit-access-control.cfg file.
+
+rakesh [15:05]
+I wasted one whole afternoon to figure that out :grinning:
+
+seth [15:10] 
+Ah, cool.
+
+seth [15:11]15:11
+@rakesh: The SOP says to clone a job.  I don't see any references to cloning on the web.  Can I assume that "copy" is what the SOP should say?
+
+rakesh [15:11] 
+Yup..i was looking for the clone option too last time. Then i realized that we have to copy it.
+
+seth [15:12] 
+And you did that by going to "new job" from the jenkins main page?
+
+rakesh [15:13] 
+yes
+
+rakesh [15:13]
+Go to trunk_deployable and then create "new job"
+
+seth [15:14] 
+what do you mean, go to trunk_deployable?
+
+rakesh [15:14] 
+Sorry..Sprint releases
+
+rakesh [15:14]
+* example releases
+
+seth [15:15] 
+Is that "create job" link different from the one on the main page?
+
+seth [15:15]
+sorry "new job"
+
+seth [15:15]
+yes, I see it is.
+
+rakesh [15:16] 
+Yes. If you create in the main page, it will go under ALL.
+
+rakesh [15:18] 
+Cool. Thx Seth!
+
+rakesh [15:19]15:19
+Seth, For web client Jenkins job. You need to copy the job "Sprint31_web-client_release" to "Sprint32_web-client_release"
+
+seth [15:20] 
+OK, thanks!
+
+rakesh [15:21] 
+You need to change Repository URL to Sprint32 and Build number to "BUILD_NUMBER=spa32.${BUILD_NUMBER}"
+
+---------
+If you don't like ransom notes (which perl programs may become over time) use this trick: get perl to reformat the code with a this command:
+
+     perl -MO=Deparse ransom.pl >better.pl
+
+-----
+You're going to think I'm a joker (you might say: the answer is a joke), but here goes anyway:
+
+    Select your Confluence RTE contents (in Windows, press Ctrl+A) and copy it to the clipboard (Ctrl+C).
+    Paste the contents (Ctrl+V) into Wikifier RT. (http://www.amnet.net.au/~ghannington/confluence/wikifier/rt/)
+    In Wikifier RT, click Show HTML.
+    Copy the ("plain text") source from the HTML pane to a text editor (for example, Notepad), and save it (say, in a .txt file).
+    Later (seconds, days, whatever), copy the saved HTML source back into the HTML pane of Wikifier RT.
+    Click Update rich text.
+    Copy the contents of the Rich text pane into the Confluence RTE.
+----------
+To make http_remote_user go to remote_user via proxy server
+On the proxy: 
+    RewriteEngine On
+   RequestHeader set REMOTE_USER %{REMOTE_USER}s
+
+   RewriteRule .* - [E=PROXY_USER:%{LA-U:REMOTE_USER}] # note mod_rewrite's lookahead option
+   RequestHeader set Proxy-User %{PROXY_USER}e
+
+On the actual host:
+
+(before the directory stuff)
+RewriteEngine On
+RewriteCond %{HTTP:Proxy-user} ^(.*)$
+RewriteRule .* - [E=REMOTE_USER:%1]
+-----------
+
+@ljl: @seth : To make insights work on firefox
+
+prateekkakirwar [17:06]
+do this
+enter about:config into the firefox address bar
+set network.negotiate-auth.allow-insecure-ntlm-v1 to true
+this will again prompt you for insight username and password
+once you can open insights
+you can go ahead again set this property to false
+you might need to keep it set to true for it to work
+
+-----------
+seth [8:47] 
+Oh for the love of $DIETY, I can't cut and paste from an F5 data list.  I guess I'll try to find the data on the F5 via command line.
+
+b list | less -- searched for restapi_trusted_conn.  found my list.
+
+Using the union of both data group lists with cto_gateway in them: 
+[seth@lb2:Active] ~ # b list | grep cto_gateway
+class trusted_cto_gateway_clients {
+class trusted_cto_gateway_ip {
+
+-----
+#memory hogs?
+[ljl@admin8 ~]$ ps -A --sort -size -o comm,size | head -n 11
+COMMAND            SZ
+dsm_om_connsvcd 3359140
+dsm_sa_datamgrd 1052420
+python          768428
+mysqld          713032
+dsm_om_shrsvcd  496276
+npcd            424232
+dsm_sa_datamgrd 385952
+dsm_sa_snmpd    329336
+salt-minion     268792
+rsyslogd        228592
+[ljl@admin8 ~]$ ps -A --sort -vsize -o comm,vsize | head -n 11
+COMMAND            VSZ
+dsm_om_connsvcd 3559728
+dsm_sa_datamgrd 1156952
+python          955044
+mysqld          774052
+dsm_om_shrsvcd  639652
+salt-minion     544596
+dsm_sa_snmpd    503548
+dsm_sa_datamgrd 490484
+npcd            434428
+httpd           412164
+[ljl@admin8 ~]$ echo 3 | sudo tee /proc/sys/vm/drop_caches
+3
+[ljl@admin8 ~]$ free -m
+             total       used       free     shared    buffers     cached
+Mem:         64346       2095      62250          0         84        639
+-/+ buffers/cache:       1371      62974
+Swap:         2047          0       2047
+### total = used + free
+### used = buff + cache + rused
+### rused = used - (buff + cache)
+### total = buff + cache + rused
+
+==============
+rpm database barf
+
+[ljl@shard18a:~] (shard18-master)$ sudo rpm --rebuilddb
+rpmdb: PANIC: fatal region error detected; run recovery
+error: db4 error(-30977) from dbenv->open: DB_RUNRECOVERY: Fatal error, run database recovery
+error: cannot open Packages index using db3 -  (-30977)
+
+cd /var/lib/rpm
+ls __db.00*
+sudo rm __db.00*
+sudo rpm --rebuilddb
+sudo yum clean all
+cd
+==========
+#add lines to nrpe in situ
+
+command[check_reboot]=/usr/lib64/nagios/plugins/check_reboot
+command[check_iam_connect]=/usr/lib64/nagios/plugins/check_iam_connect

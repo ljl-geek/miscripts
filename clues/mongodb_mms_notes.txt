@@ -1,0 +1,17 @@
+ devuser="mops-api-dev@example.com"
+ produser="mops-api-prd@example.com"
+ prodhostid=***
+ prodgroupid=***
+ devhostid=***
+ devgroupid=***
+ devkey=***
+ prodkey=***
+ devhost=sflpetemongof001.example.com
+ prodhost=mms-mongo.px.example.com
+ mode=datapoint
+ metric=BACKGROUND_FLUSH_AVG
+ granularity=MINUTE
+ period=PT1M
+
+ curl -s "http://$devuser:$devkey@$devhost:80/api/public/v1.0/groups/$devgroupid/hosts/$devhostid/metrics/$metric/?granularity=$granularity&period=$period"
+

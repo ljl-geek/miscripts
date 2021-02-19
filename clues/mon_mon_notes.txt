@@ -1,0 +1,79 @@
+Gearman/Nagios monitoring 
+
+# num of gearman workers, min 7 (7 nags), max 700
+ for n in {1..4}; do echo gearman00$n; ssh gearman00$n "ps -ef | grep [m]od_gearman_worker | wc -l"; done
+
+Desired:
+All Nagios related servers (Nagios, Gearman, Thruk):
+•	Chef-Run – Has a chef-client run completed in the last hour.  Very important, both dev and prod. Config errors can stop run completion, and make Nagios or gearman not get updated configs.  PASSIVE CHECK
+•	Load, memory, disk, cpu, NTP, ssh – basic OS level checks
+Nagios servers:
+•	Basic Processes
+  o	Nagios process, log update – detail checks depend on these, but this check is somewhat anemic
+  o	NRPE alive – if NRPE doesn’t work, checks may not go
+  o	NSCA alive – windows checks, etc
+  o	Gearman server – process and number of jobs running and waiting (check_gearman)
+•	Performance
+  o	Gearman server (also)
+  o	Nagios Latency – tells how much checks lag, alert on too much (gearmans overloaded, other IO issues) 
+  o	Retention.dat file size / Nagios related dir size – along with disk space tells us if we’re drowning in data
+  o	Orphaned – Checks that timeout or just fail silently. Too many orphans can clog up a server and cause other checks to not be run on time.  This is related to latency, but is not the only cause.  If we have a lot of checks that don’t complete, then we have problem hosts that need to be removed or fixed. 
+  o	(Gearman job cycle time)
+Gearman workers:
+•	Basic Processes
+  o	Gearman process count
+  o	NRPE alive – if NRPE doesn’t work, checks may not go
+  o	Connect to Nagios server – may be implied by check_gearman
+•	Performance
+  o	Gearman worker/minion (check_gearman) – Gearman workers and jobs
+  o	Gearman log – errors
+
+Thruk servers:
+•	Basic processes
+o	Httpd process count
+o	thruk_fastcgi.pl process
+•	Performance
+o	Httpd load time
+Cross DC:
+•	Need to monitor at least one Nagios server from another data center to have visibility into whether the DC is up and functioning.  Host ping and Nagios process will give this.  Any more gives an alert storm if a DC is down.
+Buddy checks:
+•	Thruk monitors the servers that feed it, but does not alert if they’re down, apparently.  Need to somehow round-robin monitor Nagios servers, or just keep monit alerting
+•	Need to have each Nagios server check whether it has connection to enough workers
+Graphing:
+•	Nagiostats need to be sent to graphite reliably
+•	Gearman stats – need to get visibility into gearman queues, can count workers and jobs, but need item process time (how long the average item takes to process) [localhost:4370 is closed so can’t get stats with gearman_top, or webpage (checked gearman001.phx.example.dev)]
+
+
+Current nagios servers
+nrpe: check_nagios
+
+
+## check gearman server
+Check Command
+check_gearman!clmonap001!-W 200 -C 400 -w 75 -c 200
+
+Expanded Command	
+/usr/bin/check_gearman -t 10 -H $HOSTADDRESS$ -W 200 -C 400 -w 75 -c 200
+
+## check_gearman_minion
+Check Command
+check_gearman!clmonap001!-q worker_$HOSTNAME$ -s check
+
+Expanded Command	
+/usr/bin/check_gearman -t 10 -H clmonap001 -q worker_clmonap001 -s check
+
+
+## this damned recipe puts in a nag process check:
+[li0v4q9@dgfoonagllap001 git]$ more exampleNagiosServer/recipes/monchecks.rb
+exampleNagios_nrpecheck "check_nagios" do
+  command "#{node['nagios']['plugin_dir']}/check_nagios"
+  parameters "-e 5 -F #{node['nagios']['log_dir']}/nagios.log -C /usr/sbin/nagios"
+  service_description "#{node.chef_environment.upcase} Nagios"
+  contact_groups ["HQ-Monitoring-Ops-DG"]
+  action :add
+end
+
+ToDo:
+* Bug Automation about the prod nagios100-nagios104 builds
+* GID harmonization
+

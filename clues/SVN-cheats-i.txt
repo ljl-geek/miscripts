@@ -1,0 +1,20 @@
+SVN cheats and clues
+
+repo: http://admin2/svn/{ops,conf}
+---
+ How To Revert commit in Subversion:
+How to undo a commit (or uncommit) in Subversion.
+
+The svn revert command can not be used as it only reverts local changes, ie. restores all files to the checked out revision.
+
+Instead, here's how to do it. Use the svn merge command. It usually merges revisions from one repository into another. However, it can be used to do the opposite: unmerging.
+
+svn merge -c X SOURCE merges commit X from SOURCE repository to working copy. If X is negative it will be regarded as an inverse merge and the commit removed instead of added.
+
+So, the following command reverts revision 34 in the working copy.
+
+svn merge -c -34 .
+
+Don't forget to commit. 
+----
+Diff > to a file works

@@ -1,0 +1,15 @@
+Oracle RAC tests
+
+[ljl@gearman001 ~]$  /usr/lib64/nagios/plugins/server/db/oracle/check_oracle.pl  -H xpfoorcidb001-vip.foo.example.com -R 1521  -l ISCRMSP -u nagdbmon -p N8gdbm0N -o TABLESPACE -w 85 -c 90 -e FOO
+ERROR: check_oracle timed out, no response from database (alarm)
+
+[ljl@gearman001 ~]$ sqlplus -L nagmondb/****@xpfoorcidb001-vip.foo.example.com:1521/ISCRMSP
+
+SQL*Plus: Release 11.2.0.4.0 Production on Thu Apr 30 17:18:58 2015
+
+Copyright (c) 1982, 2013, Oracle.  All rights reserved.
+
+ERROR:
+ORA-12170: TNS:Connect timeout occurred
+
+SP2-0751: Unable to connect to Oracle.  Exiting SQL*Plus
