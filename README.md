@@ -17,4 +17,12 @@ script_templates
 ----------------
 I hate starting from scratch, so I have simple templates to C+P
 
+clues
+-----
+The are clues, one-liners and notes, collected and sanitized
+
+dotfiles
+--------
+Some old dotfiles. I have more, I just need to find them and check them in
+
 
