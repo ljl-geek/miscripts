@@ -1,0 +1,28 @@
+While I probably didn't get the job, I had some fun delving into some of 
+the more obscure parts of xargs (Binary tree sort, really? Do I look 
+like a CS RCG?)
+
+Every one has seen stuff like:
+
+find ./ -maxdepth 1 -type d -mtime +360 -exec rm {} \;
+
+Well, xargs uses '{}' to stuff its aray into as well
+
+Plus, it can use -P# o do shit in parallel
+
+So you can do:
+
+ls | xargs -I'{}' bash -c 'grep foo {}; grep bar {}'
+
+ls | xargs -I '{}' bash -c 'echo "====="; echo {} ; echo "-----" ; grep ljl {}' 
+
+Plus, if you have a lot of stuff to do, like run the same ssh command on 
+lots of hosts, you can set parallelizarion with -P and a number
+
+If it craps out because you argument list is too big, use -s with a 
+suitably large number.
+
+(I swear xargs didn't have this stuff when I first learned it, but that 
+shows me that I need to re-read man pages every few years just to see 
+what's changed.)
+
